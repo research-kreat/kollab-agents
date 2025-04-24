@@ -131,17 +131,17 @@ def analyze_data():
             'process_id': process_id
         })
 
-        print("[scout_results]",scout_results)
+        print("[scout_results_JSON]",scout_results)
         
         socketio.emit('status', {'message': 'Analyst agent reviewing findings...'})
         analyst_results = analyst.process_analyst_query(scout_results)
 
-        print("[analyst_results]",analyst_results)
+        print("[analyst_results_JSON]",analyst_results)
         
         socketio.emit('status', {'message': 'Orchestrating final results...'})
         final_results = orchestrator.orchestrate_analysis(analyst_results, query)
 
-        print("[final_results]",final_results)
+        print("[final_results_JSON]",final_results)
         
         # Clean up the temporary file
         if os.path.exists(upload_data['file_path']):

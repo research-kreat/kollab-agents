@@ -66,32 +66,42 @@ class OrchestratorAgent:
             for idx, assignment in enumerate(insights_data.get('team_assignments', []), 1):
                 formatted_text.append(f"  {idx}. Issue: {assignment.get('issue_type', 'Unknown')}")
                 formatted_text.append(f"     Team: {assignment.get('responsible_team', 'Unassigned')}")
+                
+                # Add supporting teams if present
+                if assignment.get('supporting_teams') and len(assignment.get('supporting_teams')) > 0:
+                    formatted_text.append(f"     Supporting Teams: {', '.join(assignment.get('supporting_teams'))}")
+                
                 formatted_text.append(f"     Criticality: {assignment.get('criticality', 'Unknown')}")
                 
                 if assignment.get('recommended_actions'):
                     formatted_text.append("     Actions:")
-                    for action in assignment.get('recommended_actions', [])[:3]:  # Limit to first 3 actions
+                    for action in assignment.get('recommended_actions', []):
                         formatted_text.append(f"       • {action}")
                 
                 if assignment.get('resolution_strategy'):
-                    formatted_text.append(f"     Strategy: {assignment.get('resolution_strategy')[:100]}...")  # Limit length
+                    strategy_text = assignment.get('resolution_strategy')
+                    # If strategy is very long, truncate it
+                    if len(strategy_text) > 150:
+                        strategy_text = strategy_text[:150] + "..."
+                    formatted_text.append(f"     Strategy: {strategy_text}")
                 
                 formatted_text.append("")
         
         # Handle cross-team recommendations
         if 'cross_team_recommendations' in insights_data and insights_data['cross_team_recommendations']:
             formatted_text.append("CROSS-TEAM RECOMMENDATIONS:")
-            for rec in insights_data.get('cross_team_recommendations', [])[:5]:  # Limit to first 5
-                formatted_text.append(f"  • {rec}")
+            for idx, rec in enumerate(insights_data.get('cross_team_recommendations', []), 1):
+                formatted_text.append(f"  {idx}. {rec}")
             formatted_text.append("")
             
         # Handle prioritization
         if 'prioritization' in insights_data and insights_data['prioritization']:
-            formatted_text.append("PRIORITIZATION:")
+            formatted_text.append("ISSUE PRIORITIZATION:")
             for idx, priority in enumerate(insights_data.get('prioritization', []), 1):
-                formatted_text.append(f"  {idx}. {priority.get('issue_type', 'Unknown')}")
+                formatted_text.append(f"  {idx}. Issue: {priority.get('issue_type', 'Unknown')}")
                 if priority.get('reason'):
                     formatted_text.append(f"     Reason: {priority.get('reason')}")
+                formatted_text.append("")
             
         return "\n".join(formatted_text)
 
@@ -115,17 +125,21 @@ class OrchestratorAgent:
         process_id = analyst_results.get('process_id', 'unknown')
         scout_analysis = analyst_results.get('scout_analysis', {})
         analyst_insights = analyst_results.get('analyst_insights', {})
+        metadata = analyst_results.get('metadata', {})
         
         # Format the data for better LLM consumption
         formatted_scout_analysis = self.format_analysis_for_prompt(scout_analysis)
         formatted_analyst_insights = self.format_insights_for_prompt(analyst_insights)
         
-        # Create the orchestrator task
+        # Create the orchestrator task with optimized prompt
         orchestrator_task = Task(
             description=f"""
-            Synthesize the following scout analysis and analyst insights into a clear, actionable final report.
+            Create a final actionable report based on the following feedback analysis.
             
-            Original User Query: "{original_query}"
+            Query: "{original_query}"
+            
+            Context: {metadata.get('record_count', 0)} records analyzed. 
+            {metadata.get('avg_feedback_length', 0)} avg chars.
             
             SCOUT ANALYSIS:
             {formatted_scout_analysis}
@@ -133,42 +147,34 @@ class OrchestratorAgent:
             ANALYST INSIGHTS:
             {formatted_analyst_insights}
             
-            Your task is to:
+            Task:
+            1. Create an executive summary
+            2. Structure issues with recommendations
+            3. Ensure actions are specific and team-assigned
+            4. Prioritize by criticality
+            5. Add implementation timeline
             
-            1. Create a comprehensive executive summary
-            
-            2. Format all insights and recommendations into a clear, structured format
-            
-            3. Ensure all recommendations are specific, actionable, and assigned to appropriate teams
-            
-            4. Prioritize issues by criticality and impact
-            
-            5. Add an implementation timeline suggestion based on criticality
-            
-            Format your response as a detailed JSON object with the following structure:
+            Format as JSON:
             {{
-                "executive_summary": "Brief summary of key findings and most critical actions",
+                "executive_summary": "Key findings summary",
                 "issues": [
                     {{
-                        "issue_type": "Type of issue",
-                        "description": "Description of the issue based on feedback",
-                        "responsible_team": "Primary team responsible",
+                        "issue_type": "Issue name",
+                        "description": "Issue description",
+                        "responsible_team": "Primary team",
                         "criticality": "Critical/High/Medium/Low",
-                        "impact": "Description of business and user impact",
-                        "recommended_actions": [
-                            "Specific action 1",
-                            "Specific action 2"
-                        ],
-                        "resolution_strategy": "Overall strategy for addressing this issue",
-                        "timeline": "Suggested timeline for resolution (immediate, short-term, long-term)"
+                        "impact": "Business and user impact",
+                        "recommended_actions": ["Action 1", "Action 2"],
+                        "resolution_strategy": "Strategy description",
+                        "timeline": "immediate/short-term/long-term"
                     }}
                 ],
                 "cross_team_initiatives": [
                     {{
                         "name": "Initiative name",
-                        "description": "Description of cross-team initiative",
+                        "description": "Initiative description",
                         "teams_involved": ["Team 1", "Team 2"],
-                        "expected_outcome": "What success looks like"
+                        "expected_outcome": "Success criteria"
                     }}
                 ],
                 "implementation_plan": {{
@@ -194,8 +200,7 @@ class OrchestratorAgent:
             
             # Run the orchestration
             result = crew.kickoff()
-            print("[orchestrator_task]",orchestrator_task.description)
-
+            print("[orchestrator_task_PROMPT]",orchestrator_task.description)
             
             # Parse the JSON response
             try:
@@ -219,6 +224,7 @@ class OrchestratorAgent:
                 'process_id': process_id,
                 'timestamp': int(time.time()),
                 'query': original_query,
+                'metadata': metadata,
                 'final_report': parsed_result
             }
             

@@ -23,6 +23,61 @@ class AnalystAgent:
         print(f"ANALYST: {message}")
         if self.socketio:
             self.socketio.emit('analyst_log', {'message': message})
+            
+    def format_scout_analysis(self, scout_analysis):
+        """
+        Format scout analysis data as readable text
+        
+        Args:
+            scout_analysis: Dict containing the scout analysis results
+            
+        Returns:
+            Formatted text representation of the scout analysis
+        """
+        formatted_text = []
+        
+        # Issue Types Section
+        formatted_text.append("ISSUE TYPES IDENTIFIED:")
+        if 'issue_types' in scout_analysis and scout_analysis['issue_types']:
+            for i, issue in enumerate(scout_analysis['issue_types'], 1):
+                formatted_text.append(f"  {i}. Type: {issue.get('type', 'Unknown issue type')}")
+                formatted_text.append(f"     Priority: {issue.get('priority', 'Not specified')}")
+                
+                if 'key_details' in issue and issue['key_details']:
+                    formatted_text.append(f"     Key Details: {issue['key_details']}")
+                
+                if 'examples' in issue and issue['examples']:
+                    formatted_text.append("     Examples:")
+                    for example in issue['examples']:
+                        formatted_text.append(f"       - \"{example}\"")
+                
+                formatted_text.append("")  # Empty line for separation
+        else:
+            formatted_text.append("  No specific issue types identified.")
+            formatted_text.append("")
+        
+        # Common Themes Section
+        formatted_text.append("COMMON THEMES:")
+        if 'common_themes' in scout_analysis and scout_analysis['common_themes']:
+            for i, theme in enumerate(scout_analysis['common_themes'], 1):
+                formatted_text.append(f"  {i}. {theme}")
+            formatted_text.append("")
+        else:
+            formatted_text.append("  No common themes identified.")
+            formatted_text.append("")
+        
+        # Overall Sentiment Section
+        formatted_text.append("OVERALL SENTIMENT:")
+        sentiment = scout_analysis.get('overall_sentiment', 'Not specified')
+        formatted_text.append(f"  {sentiment}")
+        formatted_text.append("")
+        
+        # Summary Section
+        formatted_text.append("SUMMARY:")
+        summary = scout_analysis.get('summary', 'No summary provided')
+        formatted_text.append(f"  {summary}")
+        
+        return "\n".join(formatted_text)
 
     def process_analyst_query(self, scout_results):
         """
@@ -43,62 +98,49 @@ class AnalystAgent:
         process_id = scout_results.get('process_id', 'unknown')
         query = scout_results.get('query', '')
         scout_analysis = scout_results.get('scout_analysis', {})
+        metadata = scout_results.get('metadata', {})
         
-        # Create the analyst task
+        # Format the scout analysis as text
+        formatted_scout_analysis = self.format_scout_analysis(scout_analysis)
+        self.emit_log("Formatted scout analysis for better readability")
+        
+        # Create the analyst task with optimized prompt
         analyst_task = Task(
             description=f"""
-            Based on the following Scout Agent analysis, determine which internal teams should handle each issue, 
-            recommend specific actions, and propose resolution strategies.
+            Analyze this feedback data and determine team responsibilities and action plans.
             
-            User Query: "{query}"
+            Query: "{query}"
+            
+            Context: {scout_results.get('record_count', 0)} records analyzed. 
             
             Scout Analysis:
             ```
-            {json.dumps(scout_analysis, indent=2)}
+            {formatted_scout_analysis}
             ```
             
-            Your task is to:
+            Your task:
+            1. Assign each issue to responsible team(s) (support, technical, billing, product, etc.)
+            2. Recommend specific actions to resolve each issue
+            3. Rate criticality (Critical/High/Medium/Low) based on user impact, business impact, urgency
+            4. Provide resolution strategy for each issue
             
-            1. For each issue type identified, determine the internal team(s) (support, technical, billing, product, etc.) 
-               that should be responsible for addressing it
-               
-            2. Recommend specific actions that each team should take to resolve the issues
-            
-            3. Assess the criticality of each issue (Critical, High, Medium, Low) based on:
-               - Impact on user experience
-               - Potential business impact
-               - Urgency of resolution
-               - Number of users affected
-               
-            4. Propose a comprehensive resolution strategy for each issue
-            
-            Format your response as a detailed JSON object with the following structure:
+            Format as JSON:
             {{
                 "team_assignments": [
                     {{
-                        "issue_type": "Type of issue from scout analysis",
-                        "responsible_team": "Primary team responsible",
+                        "issue_type": "Issue name",
+                        "responsible_team": "Primary team",
                         "supporting_teams": ["Team 1", "Team 2"],
                         "criticality": "Critical/High/Medium/Low",
-                        "recommended_actions": [
-                            "Specific action 1",
-                            "Specific action 2"
-                        ],
-                        "resolution_strategy": "Detailed approach to resolving this issue"
+                        "recommended_actions": ["Action 1", "Action 2"],
+                        "resolution_strategy": "Strategy description"
                     }}
                 ],
-                "cross_team_recommendations": [
-                    "Recommendation 1",
-                    "Recommendation 2"
-                ],
+                "cross_team_recommendations": ["Recommendation 1", "Recommendation 2"],
                 "prioritization": [
                     {{
-                        "issue_type": "Most critical issue type",
-                        "reason": "Why this should be addressed first"
-                    }},
-                    {{
-                        "issue_type": "Second most critical issue type",
-                        "reason": "Why this should be addressed next"
+                        "issue_type": "Most critical issue",
+                        "reason": "Why address first"
                     }}
                 ]
             }}
@@ -119,8 +161,7 @@ class AnalystAgent:
             
             # Run the analysis
             result = crew.kickoff()
-
-            print("[analyst_task]",analyst_task.description)
+            print("[analyst_task_PROMPT]",analyst_task.description)
             
             # Parse the JSON response
             try:
@@ -145,6 +186,9 @@ class AnalystAgent:
                 'timestamp': int(time.time()),
                 'query': query,
                 'scout_analysis': scout_analysis,
+                'metadata': metadata if metadata else {
+                    'record_count': scout_results.get('record_count', 0)
+                },
                 'analyst_insights': parsed_result
             }
             

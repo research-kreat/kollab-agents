@@ -283,7 +283,7 @@ section h2 {
 }
 
 .status-messages {
-    max-height: 200px;
+    max-height: 400px;
     overflow-y: auto;
     padding: 0.5rem;
     background-color: white;
