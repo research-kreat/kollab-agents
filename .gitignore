@@ -1,0 +1,4 @@
+.env
+crews/__pycache__/*
+/process_data
+__pycache__
