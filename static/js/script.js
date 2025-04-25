@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Variables
     let uploadedFile = null;
-    let uploadId = null;
     let analysisResults = null;
     let progressSteps = {
         'upload': { weight: 10, completed: false },
@@ -88,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
         analyzeBtn.disabled = true;
     });
     
-    // Form Submission
+    // Form Submission - Combined upload and analyze
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -113,60 +112,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset progress
         resetProgress();
         
-        // Create form data
+        // Get custom query if provided
+        const query = queryTextInput.value.trim() || 
+                      "What are the key issues and actionable insights from this feedback?";
+        
+        // Create form data with all required parameters
         const formData = new FormData();
         formData.append('file', uploadedFile);
+        formData.append('company_id', companyId);
+        formData.append('query', query);
+        formData.append('save_analysis', saveAnalysisCheck.checked);
         
-        // Send file to server
-        addStatusMessage('Uploading file...', 'system');
-        
-        fetch('/api/upload', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            
-            // Store upload ID
-            uploadId = data.upload_id;
-            
-            // Update progress
-            progressSteps.upload.completed = true;
-            updateProgressBar();
-            
-            addStatusMessage(`File processed successfully. Detected ${data.record_count} records.`, 'success');
-            
-            // Get custom query if provided
-            const query = queryTextInput.value.trim() || 
-                          "What are the key issues and actionable insights from this feedback?";
-            
-            // Now send for analysis with query
-            return analyzeData(uploadId, query, companyId, saveAnalysisCheck.checked);
-        })
-        .catch(error => {
-            addStatusMessage(`Error: ${error.message}`, 'error');
-        });
-    });
-    
-    // Analysis Function
-    function analyzeData(uploadId, query, companyId, saveAnalysis) {
-        addStatusMessage('Starting analysis process...', 'system');
+        // Send file to server using the single combined endpoint
+        addStatusMessage('Uploading and analyzing file...', 'system');
         analyzeBtn.disabled = true;
         
-        fetch('/analyze', {
+        fetch('/api/analyze', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                upload_id: uploadId, 
-                query: query,
-                company_id: companyId,
-                save_analysis: saveAnalysis
-            })
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
@@ -200,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addStatusMessage(`Error: ${error.message}`, 'error');
             analyzeBtn.disabled = false;
         });
-    }
+    });
     
     // Progress Bar Handling
     function resetProgress() {
@@ -437,7 +400,6 @@ document.addEventListener('DOMContentLoaded', function() {
         queryTextInput.value = '';
         saveAnalysisCheck.checked = true;
         uploadedFile = null;
-        uploadId = null;
         analysisResults = null;
         analyzeBtn.disabled = true;
         

@@ -95,28 +95,42 @@ def dashboard(company_id):
         status_counts=status_counts
     )
 
-@app.route('/analyze', methods=['POST'])
-def analyze_data():
-    """Run Scout and Analyst agent pipelines on uploaded data"""
-    data = request.json
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
+# =============================
+# API Endpoints
+# =============================
+@app.route('/api/analyze', methods=['POST'])
+def upload_and_analyze():
+    """Combined endpoint to upload and analyze file in a single operation"""
+    # Check if file exists in request
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
     
-    upload_id = data.get('upload_id')
-    query = data.get('query', 'What are the key issues and actionable insights from this feedback?')
-    company_id = data.get('company_id', 'default_company')
-    save_analysis = data.get('save_analysis', True)
-
-    if not upload_id or upload_id not in current_uploads:
-        return jsonify({'error': 'Invalid or expired upload ID'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    
+    # Get the other parameters from the form data
+    company_id = request.form.get('company_id', 'default_company')
+    query = request.form.get('query', 'What are the key issues and actionable insights from this feedback?')
+    save_analysis = request.form.get('save_analysis', 'true').lower() == 'true'
+    
+    # Generate process ID
+    process_id = str(uuid.uuid4())
     
     try:
-        socketio.emit('status', {'message': 'Starting analysis...'})
-        upload_data = current_uploads[upload_id]
-        content = upload_data['content']
-        process_id = str(uuid.uuid4())
+        # Step 1: Upload and process the file
+        socketio.emit('status', {'message': 'Processing file...'})
         
-        # Scout agent
+        # Save file temporarily
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        
+        # Process the file
+        content, file_type = process_file(file_path)
+        socketio.emit('status', {'message': f'File processed successfully. Found {len(content) if isinstance(content, list) else 1} records.'})
+        
+        # Step 2: Scout agent processing
         socketio.emit('status', {'message': 'Scout agent processing data...'})
         scout_results = scout.process_scout_query({
             'content': content,
@@ -127,19 +141,24 @@ def analyze_data():
 
         if 'error' in scout_results:
             socketio.emit('status', {'message': f'Error in Scout analysis: {scout_results["error"]}'})
+            if os.path.exists(file_path):
+                os.remove(file_path)
             return jsonify(scout_results), 500
         
-        # Analyst agent
+        # Step 3: Analyst agent processing
         socketio.emit('status', {'message': 'Analyst agent reviewing findings...'})
         final_results = analyst.process_analyst_query(scout_results)
-
-        logger.info(f"Analysis completed for process {process_id}")
         
+        # Clean up temporary file
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
         # Initialize status for each issue
         if 'final_report' in final_results and 'issues' in final_results['final_report']:
             for issue in final_results['final_report']['issues']:
                 issue['status'] = 'new'
         
+        # Step 4: Save analysis if requested
         if save_analysis:
             save_result = storage.save_analysis(final_results, company_id)
             final_results['saved'] = save_result['success']
@@ -147,60 +166,15 @@ def analyze_data():
                 final_results['ticket_id'] = save_result['ticket_id']
             else:
                 logger.error(f"Failed to save analysis: {save_result['error']}")
-
-        if os.path.exists(upload_data['file_path']):
-            os.remove(upload_data['file_path'])
-        del current_uploads[upload_id]
         
         socketio.emit('status', {'message': 'Analysis complete'})
         return jsonify(final_results)
-    except Exception as e:
-        logger.error(f"Error analyzing data: {str(e)}")
-        socketio.emit('status', {'message': f'Error: {str(e)}'})
-        return jsonify({'error': str(e)}), 500
-
-# =============================
-# API Endpoints
-# =============================
-
-@app.route('/api/upload', methods=['POST'])
-def upload_file():
-    """Handle file upload and initial processing"""
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    
-    upload_id = str(uuid.uuid4())
-    filename = secure_filename(file.filename)
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(file_path)
-    
-    try:
-        socketio.emit('status', {'message': 'Processing file...'})
-        content, file_type = process_file(file_path)
         
-        current_uploads[upload_id] = {
-            'file_path': file_path,
-            'content': content,
-            'file_type': file_type,
-            'timestamp': time.time()
-        }
-        
-        socketio.emit('status', {'message': 'File processed successfully'})
-        return jsonify({
-            'success': True,
-            'upload_id': upload_id,
-            'message': 'File processed successfully',
-            'file_type': file_type,
-            'record_count': len(content) if isinstance(content, list) else 1
-        })
     except Exception as e:
-        logger.error(f"Error processing file: {str(e)}")
+        logger.error(f"Error processing and analyzing file: {str(e)}")
         socketio.emit('status', {'message': f'Error: {str(e)}'})
-        if os.path.exists(file_path):
+        # Clean up temporary file if it exists
+        if 'file_path' in locals() and os.path.exists(file_path):
             os.remove(file_path)
         return jsonify({'error': str(e)}), 500
 
