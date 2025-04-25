@@ -284,7 +284,7 @@ class ScoutAgent:
                         "examples": ["Example 1", "Example 2"],
                         "priority": "High/Medium/Low",
                         "key_details": "Important details",
-                        "sources": ["User John from New York is facing battery drainage", "Battery issue reported by multiple customers"],
+                        "sources": ["User John from New York is facing battery drainage via Chat", "Battery issue reported by multiple customers via Slack", "Amaan Edwards via Social media"],
                         "tags": ["refund", "replacement", "bug"]
                     }}
                 ],

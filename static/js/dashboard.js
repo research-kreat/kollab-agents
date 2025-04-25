@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusFilter = document.getElementById('status-filter');
     const searchInput = document.getElementById('search-input');
     const ticketCards = document.querySelectorAll('.ticket-card');
-    const viewButtons = document.querySelectorAll('.view-btn');
+    const spreadTasksButtons = document.querySelectorAll('.spread-tasks-btn');
     const statusOptions = document.querySelectorAll('.status-option');
     const analysisModal = document.getElementById('analysis-modal');
     const modalTitle = document.getElementById('modal-title');
@@ -16,17 +16,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalCloseBtn = document.getElementById('modal-close-btn');
     const closeModalBtn = document.querySelector('.close-modal');
     
+    // Task Details Elements
+    const taskDetailsSection = document.getElementById('task-details-section');
+    const taskDetailTitle = document.getElementById('task-detail-title');
+    const taskSummary = document.getElementById('task-summary');
+    const taskList = document.getElementById('task-list');
+    const taskTimeline = document.getElementById('task-timeline');
+    const initiativesList = document.getElementById('initiatives-list');
+    const closeTaskDetailsBtn = document.getElementById('close-task-details');
+    
     // Current company ID (from URL or default)
     const companyId = getCompanyId();
     let currentTicketId = null;
+    let currentAnalysisData = null;
     
-    // View ticket details
-    viewButtons.forEach(button => {
+    // Spread tasks button handling
+    spreadTasksButtons.forEach(button => {
         button.addEventListener('click', function() {
             const ticketId = this.getAttribute('data-ticket-id');
-            openAnalysisModal(ticketId);
+            loadTaskDetails(ticketId);
         });
     });
+    
+    // Close task details
+    if (closeTaskDetailsBtn) {
+        closeTaskDetailsBtn.addEventListener('click', function() {
+            taskDetailsSection.style.display = 'none';
+        });
+    }
     
     // Status update options
     statusOptions.forEach(option => {
@@ -102,6 +119,213 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 card.style.display = 'none';
             }
+        });
+    }
+    
+    // Load task details and display them
+    function loadTaskDetails(ticketId) {
+        // Store current ticket ID
+        currentTicketId = ticketId;
+        
+        // Show loading state
+        taskList.innerHTML = '<div class="loading-tasks"><i class="fas fa-spinner fa-spin"></i> Loading tasks...</div>';
+        taskDetailsSection.style.display = 'block';
+        taskDetailTitle.textContent = `Tasks for Ticket #${ticketId.substring(0, 8)}`;
+        
+        // Fetch analysis details
+        fetch(`/api/analysis/${companyId}/${ticketId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentAnalysisData = data.data;
+                    renderTaskDetails(data.data);
+                } else {
+                    showTaskError(data.error || 'Failed to load task details');
+                }
+            })
+            .catch(error => {
+                showTaskError('Error loading tasks: ' + error);
+            });
+    }
+    
+    // Show error in task details
+    function showTaskError(message) {
+        taskList.innerHTML = `<div class="error-message"><i class="fas fa-exclamation-triangle"></i> ${message}</div>`;
+        taskTimeline.innerHTML = '';
+        initiativesList.innerHTML = '';
+        taskSummary.textContent = 'Failed to load task details';
+    }
+    
+    // Render task details from analysis data
+    function renderTaskDetails(analysis) {
+        // Render summary
+        taskSummary.textContent = analysis.final_report?.executive_summary || 'No summary available';
+        
+        // Render tasks/issues
+        renderTaskList(analysis.final_report?.issues || []);
+        
+        // Render implementation plan
+        renderTaskImplementationPlan(analysis.final_report?.implementation_plan || {});
+        
+        // Render cross-team initiatives
+        renderInitiatives(analysis.final_report?.cross_team_initiatives || []);
+        
+        // Scroll to task details
+        taskDetailsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // Render task list
+    function renderTaskList(tasks) {
+        taskList.innerHTML = '';
+        
+        if (tasks.length === 0) {
+            taskList.innerHTML = '<p>No tasks found</p>';
+            return;
+        }
+        
+        tasks.forEach(task => {
+            const taskCard = document.createElement('div');
+            taskCard.className = 'task-card';
+            
+            // Determine badge class based on criticality
+            const badgeClass = `badge-${task.criticality ? task.criticality.toLowerCase() : 'medium'}`;
+            
+            // Build source list HTML if sources exist
+            let sourcesHtml = '';
+            if (task.sources && task.sources.length > 0) {
+                sourcesHtml = `
+                    <h5>User Reports:</h5>
+                    <ul class="sources-list">
+                        ${task.sources.map(source => `<li>${source}</li>`).join('')}
+                    </ul>
+                `;
+            }
+            
+            // Build tags HTML if tags exist
+            let tagsHtml = '';
+            if (task.tags && task.tags.length > 0) {
+                tagsHtml = `
+                    <div class="task-tags">
+                        ${task.tags.map(tag => `<span class="task-tag">${tag}</span>`).join('')}
+                    </div>
+                `;
+            }
+            
+            // Build recommended actions
+            let actionsHtml = '';
+            if (task.recommended_actions && task.recommended_actions.length > 0) {
+                actionsHtml = `
+                    <h5>Recommended Actions:</h5>
+                    <ul class="actions-list">
+                        ${task.recommended_actions.map(action => `<li>${action}</li>`).join('')}
+                    </ul>
+                `;
+            }
+            
+            taskCard.innerHTML = `
+                <div class="task-header">
+                    <h4 class="task-title">${task.issue_type || 'Untitled Task'}</h4>
+                    <span class="task-badge ${badgeClass}">${task.criticality || 'Medium'}</span>
+                </div>
+                <div class="task-body">
+                    <p class="task-description">${task.description || 'No description available'}</p>
+                    <p class="task-team"><strong>Team:</strong> ${task.responsible_team || 'Unassigned'}</p>
+                    ${tagsHtml}
+                    ${actionsHtml}
+                    ${sourcesHtml}
+                    <p><strong>Resolution Strategy:</strong> ${task.resolution_strategy || 'Not specified'}</p>
+                    <p><strong>Timeline:</strong> ${task.timeline || 'Not specified'}</p>
+                </div>
+            `;
+            
+            taskList.appendChild(taskCard);
+        });
+    }
+    
+    // Render implementation plan for tasks
+    function renderTaskImplementationPlan(plan) {
+        taskTimeline.innerHTML = '';
+        
+        // Immediate Actions
+        if (plan.immediate_actions && plan.immediate_actions.length > 0) {
+            const immediateSection = document.createElement('div');
+            immediateSection.className = 'timeline-section';
+            immediateSection.innerHTML = `
+                <h4><i class="fas fa-bolt"></i> Immediate Actions</h4>
+                <ul class="timeline-items">
+                    ${plan.immediate_actions.map(action => `<li>${action}</li>`).join('')}
+                </ul>
+            `;
+            taskTimeline.appendChild(immediateSection);
+        }
+        
+        // Short Term Actions
+        if (plan.short_term_actions && plan.short_term_actions.length > 0) {
+            const shortTermSection = document.createElement('div');
+            shortTermSection.className = 'timeline-section';
+            shortTermSection.innerHTML = `
+                <h4><i class="fas fa-calendar-alt"></i> Short Term Actions (1-4 weeks)</h4>
+                <ul class="timeline-items">
+                    ${plan.short_term_actions.map(action => `<li>${action}</li>`).join('')}
+                </ul>
+            `;
+            taskTimeline.appendChild(shortTermSection);
+        }
+        
+        // Long Term Actions
+        if (plan.long_term_actions && plan.long_term_actions.length > 0) {
+            const longTermSection = document.createElement('div');
+            longTermSection.className = 'timeline-section';
+            longTermSection.innerHTML = `
+                <h4><i class="fas fa-calendar-check"></i> Long Term Actions (1-3 months)</h4>
+                <ul class="timeline-items">
+                    ${plan.long_term_actions.map(action => `<li>${action}</li>`).join('')}
+                </ul>
+            `;
+            taskTimeline.appendChild(longTermSection);
+        }
+        
+        // If no timeline data
+        if (taskTimeline.children.length === 0) {
+            taskTimeline.innerHTML = '<p>No implementation plan available</p>';
+        }
+    }
+    
+    // Render cross-team initiatives
+    function renderInitiatives(initiatives) {
+        initiativesList.innerHTML = '';
+        
+        if (initiatives.length === 0) {
+            initiativesList.innerHTML = '<p>No cross-team initiatives found</p>';
+            return;
+        }
+        
+        initiatives.forEach(initiative => {
+            const initiativeCard = document.createElement('div');
+            initiativeCard.className = 'initiative-card';
+            
+            // Build teams list
+            let teamsHtml = '';
+            if (initiative.teams_involved && initiative.teams_involved.length > 0) {
+                teamsHtml = `
+                    <p class="teams-involved"><strong>Teams Involved:</strong></p>
+                    <div class="teams-list">
+                        ${initiative.teams_involved.map(team => `<span class="team-tag">${team}</span>`).join('')}
+                    </div>
+                `;
+            }
+            
+            initiativeCard.innerHTML = `
+                <div class="initiative-header">
+                    <h4 class="initiative-title">${initiative.name || 'Untitled Initiative'}</h4>
+                </div>
+                <div class="initiative-body">
+                    <p class="initiative-description">${initiative.description || 'No description available'}</p>
+                    ${teamsHtml}
+                </div>
+            `;
+            
+            initiativesList.appendChild(initiativeCard);
         });
     }
     

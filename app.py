@@ -80,7 +80,7 @@ def dashboard(company_id):
         return render_template('error.html', message=result['error'])
     
     analyses = result['data']
-    status_counts = {'new': 0, 'processing': 0, 'completed': 0, 'failed': 0}
+    status_counts = {'new': 0, 'processing': 0, 'resolved': 0, 'failed': 0}
     
     for analysis in analyses:
         status = analysis.get('status', 'new')

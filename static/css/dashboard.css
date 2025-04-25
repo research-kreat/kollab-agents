@@ -106,6 +106,7 @@
     border-radius: var(--border-radius);
     padding: 2rem;
     box-shadow: var(--shadow);
+    margin-bottom: 2rem;
 }
 
 .section-header {
@@ -189,12 +190,8 @@
     background-color: var(--high-color);
 }
 
-.status-completed {
+.status-resolved {
     background-color: var(--low-color);
-}
-
-.status-failed {
-    background-color: var(--critical-color);
 }
 
 .ticket-body {
@@ -208,7 +205,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
-    line-clamp: 1;
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
 }
 
@@ -219,7 +216,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
-    line-clamp: 2;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
 }
 
@@ -253,12 +250,12 @@
     margin-right: 0.3rem;
 }
 
-.view-btn {
+.spread-tasks-btn {
     background-color: var(--primary-color);
     color: white;
 }
 
-.view-btn:hover {
+.spread-tasks-btn:hover {
     background-color: #3a5bd4;
 }
 
@@ -329,6 +326,133 @@
 .no-tickets p {
     color: var(--text-light);
     margin-bottom: 1.5rem;
+}
+
+/* Task Details Section */
+.task-details-section {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.task-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.task-card {
+    border: 1px solid #e9ecef;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.task-header {
+    background-color: #f8f9fa;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.task-title {
+    font-weight: 500;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.task-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: white;
+}
+
+.task-body {
+    padding: 1rem;
+}
+
+.task-description {
+    margin-bottom: 1rem;
+}
+
+.task-team {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.task-tags {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+}
+
+.task-tag {
+    background-color: #e9ecef;
+    color: var(--text-color);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* Initiatives List */
+.initiatives-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.initiative-card {
+    border: 1px solid #e9ecef;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.initiative-header {
+    background-color: #f0f4ff;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.initiative-title {
+    font-weight: 500;
+    font-size: 1rem;
+    margin: 0;
+    color: var(--primary-color);
+}
+
+.initiative-body {
+    padding: 1rem;
+}
+
+.initiative-description {
+    margin-bottom: 1rem;
+}
+
+.teams-involved {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.teams-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.team-tag {
+    background-color: #e9ecef;
+    color: var(--text-color);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
 }
 
 /* Modal Styles */
@@ -416,20 +540,25 @@
         flex-direction: column;
         gap: 1rem;
     }
-    
+
     .filter-controls {
         flex-direction: column;
         width: 100%;
     }
-    
+
     .filter-select,
     .search-input {
         width: 100%;
     }
-    
+
     .section-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 1rem;
+    }
+
+    .task-list,
+    .initiatives-list {
+        grid-template-columns: 1fr;
     }
 }

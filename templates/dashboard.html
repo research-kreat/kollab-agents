@@ -50,8 +50,8 @@
             <div class="stat-card">
                 <i class="fas fa-check-circle"></i>
                 <div class="stat-info">
-                    <span class="stat-value">{{ status_counts.get('completed', 0) }}</span>
-                    <span class="stat-label">Completed</span>
+                    <span class="stat-value">{{ status_counts.get('resolved', 0) }}</span>
+                    <span class="stat-label">Resolved</span>
                 </div>
             </div>
         </div>
@@ -65,8 +65,7 @@
                             <option value="all">All Statuses</option>
                             <option value="new">New</option>
                             <option value="processing">Processing</option>
-                            <option value="completed">Completed</option>
-                            <option value="failed">Failed</option>
+                            <option value="resolved">Resolved</option>
                         </select>
                         <input type="text" id="search-input" class="search-input" placeholder="Search tickets...">
                     </div>
@@ -89,8 +88,8 @@
                                 </div>
                             </div>
                             <div class="ticket-actions">
-                                <button class="action-btn view-btn" data-ticket-id="{{ analysis.ticket_id }}">
-                                    <i class="fas fa-eye"></i> View
+                                <button class="action-btn spread-tasks-btn" data-ticket-id="{{ analysis.ticket_id }}">
+                                    <i class="fas fa-tasks"></i> Spread Tasks
                                 </button>
                                 <div class="status-dropdown">
                                     <button class="action-btn status-btn">
@@ -99,8 +98,7 @@
                                     <div class="status-dropdown-content">
                                         <a href="#" class="status-option" data-status="new" data-ticket-id="{{ analysis.ticket_id }}">New</a>
                                         <a href="#" class="status-option" data-status="processing" data-ticket-id="{{ analysis.ticket_id }}">Processing</a>
-                                        <a href="#" class="status-option" data-status="completed" data-ticket-id="{{ analysis.ticket_id }}">Completed</a>
-                                        <a href="#" class="status-option" data-status="failed" data-ticket-id="{{ analysis.ticket_id }}">Failed</a>
+                                        <a href="#" class="status-option" data-status="resolved" data-ticket-id="{{ analysis.ticket_id }}">Resolved</a>
                                     </div>
                                 </div>
                             </div>
@@ -113,6 +111,36 @@
                             <a href="/" class="primary-button">Create your first analysis</a>
                         </div>
                     {% endif %}
+                </div>
+            </section>
+            
+            <!-- Task Details Section - Initially Hidden -->
+            <section id="task-details-section" class="task-details-section" style="display: none;">
+                <div class="section-header">
+                    <h2 id="task-detail-title">Task Details</h2>
+                    <button id="close-task-details" class="secondary-button">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+                
+                <div class="executive-summary">
+                    <h3>Executive Summary</h3>
+                    <p id="task-summary"></p>
+                </div>
+                
+                <div class="task-container">
+                    <h3>All Tasks</h3>
+                    <div id="task-list" class="task-list"></div>
+                </div>
+                
+                <div class="implementation-plan">
+                    <h3>Implementation Plan</h3>
+                    <div id="task-timeline" class="timeline-container"></div>
+                </div>
+                
+                <div class="initiatives-container">
+                    <h3>Cross-Team Initiatives</h3>
+                    <div id="initiatives-list" class="initiatives-list"></div>
                 </div>
             </section>
         </main>

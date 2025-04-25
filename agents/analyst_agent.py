@@ -159,7 +159,6 @@ class AnalystAgent:
                     'name': f"Initiative {i+1}",
                     'description': recommendation,
                     'teams_involved': self._extract_teams_from_text(recommendation),
-                    'expected_outcome': f"Resolving cross-functional issues related to {recommendation.split()[0:5]}..."
                 }
                 cross_team_initiatives.append(initiative)
         
