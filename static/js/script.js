@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileInfo = document.getElementById('file-info');
     const fileName = document.getElementById('file-name');
     const removeFileBtn = document.getElementById('remove-file');
-    const queryInput = document.getElementById('query');
     const analyzeBtn = document.getElementById('analyze-btn');
     const statusSection = document.getElementById('status-section');
     const statusMessages = document.getElementById('status-messages');
@@ -70,8 +69,8 @@ document.addEventListener('DOMContentLoaded', function() {
             fileLabel.style.display = 'none';
             fileInfo.style.display = 'flex';
             
-            // Enable analyze button if query is also filled
-            validateForm();
+            // Enable analyze button when file is selected
+            analyzeBtn.disabled = false;
         }
     });
     
@@ -84,25 +83,11 @@ document.addEventListener('DOMContentLoaded', function() {
         analyzeBtn.disabled = true;
     });
     
-    // Query Input Handling
-    queryInput.addEventListener('input', function() {
-        validateForm();
-    });
-    
-    // Form Validation
-    function validateForm() {
-        if (uploadedFile && queryInput.value.trim() !== '') {
-            analyzeBtn.disabled = false;
-        } else {
-            analyzeBtn.disabled = true;
-        }
-    }
-    
     // Form Submission
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        if (!uploadedFile || queryInput.value.trim() === '') {
+        if (!uploadedFile) {
             return;
         }
         
@@ -138,8 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             addStatusMessage(`File processed successfully. Detected ${data.record_count} records.`, 'success');
             
-            // Now send for analysis
-            return analyzeData(uploadId, queryInput.value);
+            // Now send for analysis with a default query about "key issues and actionable insights"
+            return analyzeData(uploadId, "What are the key issues and actionable insights from this feedback?");
         })
         .catch(error => {
             addStatusMessage(`Error: ${error.message}`, 'error');
@@ -286,6 +271,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Determine badge class based on criticality
             const badgeClass = `badge-${issue.criticality ? issue.criticality.toLowerCase() : 'medium'}`;
             
+            // Build source list HTML if sources exist
+            let sourcesHtml = '';
+            if (issue.sources && issue.sources.length > 0) {
+                sourcesHtml = `
+                    <h5>User Reports:</h5>
+                    <ul class="sources-list">
+                        ${issue.sources.map(source => `<li>${source}</li>`).join('')}
+                    </ul>
+                `;
+            }
+            
             issueCard.innerHTML = `
                 <div class="issue-header">
                     <h4 class="issue-title">${issue.issue_type || 'Untitled Issue'}</h4>
@@ -294,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="issue-body">
                     <p class="issue-description">${issue.description || 'No description available'}</p>
                     <p class="issue-team"><strong>Team:</strong> ${issue.responsible_team || 'Unassigned'}</p>
-                    
+                    ${sourcesHtml}
                     <h5>Recommended Actions:</h5>
                     <ul class="actions-list">
                         ${(issue.recommended_actions || []).map(action => `<li>${action}</li>`).join('')}

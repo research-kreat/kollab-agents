@@ -51,6 +51,11 @@ class AnalystAgent:
                     for example in issue['examples']:
                         formatted_text.append(f"       - \"{example}\"")
                 
+                if 'sources' in issue and issue['sources']:
+                    formatted_text.append("     User Reports:")
+                    for source in issue['sources']:
+                        formatted_text.append(f"       - \"{source}\"")
+                
                 formatted_text.append("")  # Empty line for separation
         else:
             formatted_text.append("  No specific issue types identified.")
@@ -123,6 +128,7 @@ class AnalystAgent:
             2. Recommend specific actions to resolve each issue
             3. Rate criticality (Critical/High/Medium/Low) based on user impact, business impact, urgency
             4. Provide resolution strategy for each issue
+            5. Maintain the user reports/sources from the scout analysis
             
             Format as JSON:
             {{
@@ -133,7 +139,8 @@ class AnalystAgent:
                         "supporting_teams": ["Team 1", "Team 2"],
                         "criticality": "Critical/High/Medium/Low",
                         "recommended_actions": ["Action 1", "Action 2"],
-                        "resolution_strategy": "Strategy description"
+                        "resolution_strategy": "Strategy description",
+                        "sources": ["User report 1", "User report 2"]
                     }}
                 ],
                 "cross_team_recommendations": ["Recommendation 1", "Recommendation 2"],

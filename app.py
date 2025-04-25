@@ -105,10 +105,10 @@ def analyze_data():
         return jsonify({'error': 'No data provided'}), 400
     
     upload_id = data.get('upload_id')
-    query = data.get('query')
+    query = data.get('query', 'What are the key issues and actionable insights from this feedback?')
     
-    if not upload_id or not query:
-        return jsonify({'error': 'Missing upload_id or query parameter'}), 400
+    if not upload_id:
+        return jsonify({'error': 'Missing upload_id parameter'}), 400
     
     if upload_id not in current_uploads:
         return jsonify({'error': 'Invalid upload ID or session expired'}), 400
@@ -157,7 +157,7 @@ def analyze_data():
         logger.error(f"Error analyzing data: {str(e)}")
         socketio.emit('status', {'message': f'Error: {str(e)}'})
         return jsonify({'error': str(e)}), 500
-
+    
 # Cleanup function to run periodically (could be triggered by a background task)
 def cleanup_old_uploads():
     current_time = time.time()

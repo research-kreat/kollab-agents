@@ -38,6 +38,10 @@ class OrchestratorAgent:
                     formatted_text.append(f"     Details: {issue.get('key_details')}")
                 if issue.get('examples') and len(issue.get('examples')) > 0:
                     formatted_text.append(f"     Example: {issue.get('examples')[0]}")
+                if issue.get('sources') and len(issue.get('sources')) > 0:
+                    formatted_text.append(f"     User Reports: {len(issue.get('sources'))} reports")
+                    for i, source in enumerate(issue.get('sources')[:3], 1):  # List the first 3 sources
+                        formatted_text.append(f"       {i}. {source}")
                 formatted_text.append("")
         
         # Handle common themes
@@ -84,6 +88,12 @@ class OrchestratorAgent:
                     if len(strategy_text) > 150:
                         strategy_text = strategy_text[:150] + "..."
                     formatted_text.append(f"     Strategy: {strategy_text}")
+                
+                # Add user reports/sources if present
+                if assignment.get('sources') and len(assignment.get('sources')) > 0:
+                    formatted_text.append(f"     User Reports: {len(assignment.get('sources'))} reports")
+                    for i, source in enumerate(assignment.get('sources')[:2], 1):  # List the first 2 sources
+                        formatted_text.append(f"       {i}. {source}")
                 
                 formatted_text.append("")
         
@@ -152,7 +162,8 @@ class OrchestratorAgent:
             2. Structure issues with recommendations
             3. Ensure actions are specific and team-assigned
             4. Prioritize by criticality
-            5. Add implementation timeline
+            5. Include user reports/sources for each issue
+            6. Add implementation timeline
             
             Format as JSON:
             {{
@@ -166,7 +177,8 @@ class OrchestratorAgent:
                         "impact": "Business and user impact",
                         "recommended_actions": ["Action 1", "Action 2"],
                         "resolution_strategy": "Strategy description",
-                        "timeline": "immediate/short-term/long-term"
+                        "timeline": "immediate/short-term/long-term",
+                        "sources": ["User report 1", "User report 2"]
                     }}
                 ],
                 "cross_team_initiatives": [

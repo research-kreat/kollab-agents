@@ -43,7 +43,8 @@ class ScoutAgent:
             "sources": Counter(),
             "avg_length": 0,
             "has_structured_fields": False,
-            "field_statistics": Counter()
+            "field_statistics": Counter(),
+            "users": Counter()
         }
         
         total_length = 0
@@ -67,6 +68,12 @@ class ScoutAgent:
             elif "channel" in record:
                 metadata["sources"][str(record["channel"])] += 1
             
+            # Track users/usernames
+            for user_field in ["user", "username", "user_id", "customer", "customer_id", "name", "email"]:
+                if user_field in record and record[user_field]:
+                    metadata["users"][str(record[user_field])] += 1
+                    break
+            
             # Calculate average text length
             feedback_text = ""
             for field in ["text", "message", "feedback", "content", "description"]:
@@ -84,12 +91,13 @@ class ScoutAgent:
         
         return metadata
 
-    def format_all_feedback(self, all_feedback, max_token_estimate=100000):
+    def format_all_feedback(self, all_feedback, user_map=None, max_token_estimate=100000):
         """
         Format all feedback data without sampling, only cleaning whitespace
         
         Args:
             all_feedback: List of all feedback text
+            user_map: Dictionary mapping feedback to usernames
             max_token_estimate: Rough limit to ensure we don't exceed token limits
             
         Returns:
@@ -107,7 +115,11 @@ class ScoutAgent:
         char_limit = max_token_estimate * 4  # Rough estimate of chars per token
         
         for i, text in enumerate(cleaned_feedback, 1):
-            feedback_entry = f"Feedback {i}: {text}"
+            user_info = ""
+            if user_map and text in user_map and user_map[text]:
+                user_info = f" (User: {user_map[text]})"
+                
+            feedback_entry = f"Feedback {i}{user_info}: {text}"
             
             # Check if we're approaching token limit
             if total_chars + len(feedback_entry) > char_limit:
@@ -132,7 +144,7 @@ class ScoutAgent:
         self.emit_log("Starting Scout Agent analysis...")
         
         content = data.get('content', [])
-        query = data.get('query', '')
+        query = data.get('query', 'What are the key issues and actionable insights from this feedback?')
         process_id = data.get('process_id', str(uuid.uuid4()))
         
         if not content:
@@ -144,10 +156,20 @@ class ScoutAgent:
         metadata = self.extract_metadata(content)
         self.emit_log(f"Analyzing {record_count} feedback records...")
         
+        # Build user/feedback map to track which users reported which issues
+        user_feedback_map = {}
+        
         # Extract all text for analysis
         all_feedback = []
         for record in content:
             feedback_text = None
+            username = None
+            
+            # Try to get username
+            for user_field in ["user", "username", "user_id", "customer", "customer_id", "name", "email"]:
+                if user_field in record and record[user_field]:
+                    username = str(record[user_field])
+                    break
             
             # For text-based records
             if 'text' in record:
@@ -169,11 +191,16 @@ class ScoutAgent:
             
             # Clean and add the feedback
             if feedback_text:
-                all_feedback.append(feedback_text)  # Don't clean here, will do in formatting
+                cleaned_text = self.clean_text(feedback_text)
+                all_feedback.append(cleaned_text)
+                
+                # Map feedback to username if available
+                if username:
+                    user_feedback_map[cleaned_text] = username
         
         # Format all feedback (no sampling, just whitespace cleaning)
         self.emit_log(f"Formatting {len(all_feedback)} feedback items...")
-        formatted_feedback = self.format_all_feedback(all_feedback)
+        formatted_feedback = self.format_all_feedback(all_feedback, user_feedback_map)
         
         # Create the scout task with a more concise prompt
         scout_task = Task(
@@ -191,8 +218,9 @@ class ScoutAgent:
             Task:
             1. Identify issue types with priorities (Critical/High/Medium/Low)
             2. Extract examples and key details for each issue
-            3. Note common themes and overall sentiment
-            4. Provide a summary of findings
+            3. Include sources with username context for each issue
+            4. Note common themes and overall sentiment
+            5. Provide a summary of findings
             
             Format as JSON:
             {{
@@ -201,7 +229,8 @@ class ScoutAgent:
                         "type": "Issue name",
                         "examples": ["Example 1", "Example 2"],
                         "priority": "High/Medium/Low",
-                        "key_details": "Important details"
+                        "key_details": "Important details",
+                        "sources": ["John is facing the issue with battery drainage", "Battery drainage is found when touching water"]
                     }}
                 ],
                 "common_themes": ["Theme 1", "Theme 2"],

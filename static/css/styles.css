@@ -179,34 +179,6 @@ section h2 {
     color: var(--critical-color);
 }
 
-.query-input {
-    margin-bottom: 1.5rem;
-}
-
-.query-input label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.query-input textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 1rem;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: var(--border-radius);
-    resize: vertical;
-    font-family: inherit;
-    font-size: 1rem;
-    transition: var(--transition);
-}
-
-.query-input textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(74, 109, 229, 0.1);
-}
-
 .primary-button {
     background-color: var(--primary-color);
     color: white;
@@ -540,4 +512,36 @@ footer {
     .action-buttons button {
         width: 100%;
     }
+}
+
+.sources-list {
+    list-style: none;
+    margin-bottom: 1rem;
+    background-color: #f8f9fa;
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--primary-color);
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.sources-list li {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 0.9rem;
+}
+
+.sources-list li:last-child {
+    border-bottom: none;
+}
+
+.file-upload.highlighted {
+    border-color: var(--primary-color);
+    background-color: rgba(74, 109, 229, 0.05);
+}
+
+#analyze-btn {
+    display: block;
+    margin: 0 auto;
+    min-width: 200px;
 }
