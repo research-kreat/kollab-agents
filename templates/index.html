@@ -19,6 +19,17 @@
                 <p>Upload your feedback data to get started</p>
                 
                 <form id="upload-form" enctype="multipart/form-data">
+                    <div class="company-input">
+                        <label for="company-id">Company ID</label>
+                        <input type="text" id="company-id" placeholder="Enter your company ID" required>
+                        <p class="company-help">Used to organize your analyses. If this is your first time, create a unique ID.</p>
+                    </div>
+                    
+                    <div class="query-input">
+                        <label for="query-text">Analysis Query (Optional)</label>
+                        <textarea id="query-text" placeholder="What would you like to learn from this feedback?"></textarea>
+                    </div>
+                    
                     <div class="file-upload">
                         <label for="file-input">
                             <i class="fas fa-cloud-upload-alt"></i>
@@ -32,6 +43,13 @@
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
+                    </div>
+                    
+                    <div class="save-option">
+                        <label>
+                            <input type="checkbox" id="save-analysis" checked>
+                            Save analysis for future reference
+                        </label>
                     </div>
                     
                     <button type="submit" id="analyze-btn" class="primary-button" disabled>
@@ -79,6 +97,12 @@
                 </div>
                 
                 <div class="action-buttons">
+                    <div class="saved-notification" id="saved-notification" style="display: none;">
+                        <i class="fas fa-check-circle"></i>
+                        <span id="saved-text">Analysis saved successfully</span>
+                        <a href="#" id="view-dashboard-link" class="dashboard-link">View in Dashboard</a>
+                    </div>
+                    
                     <button id="download-json" class="secondary-button">
                         <i class="fas fa-download"></i> Download JSON
                     </button>

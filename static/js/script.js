@@ -20,6 +20,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadJsonBtn = document.getElementById('download-json');
     const newAnalysisBtn = document.getElementById('new-analysis');
     const tabButtons = document.querySelectorAll('.tab-btn');
+    const companyIdInput = document.getElementById('company-id');
+    const queryTextInput = document.getElementById('query-text');
+    const saveAnalysisCheck = document.getElementById('save-analysis');
+    const savedNotification = document.getElementById('saved-notification');
+    const savedText = document.getElementById('saved-text');
+    const viewDashboardLink = document.getElementById('view-dashboard-link');
     
     // Variables
     let uploadedFile = null;
@@ -27,9 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let analysisResults = null;
     let progressSteps = {
         'upload': { weight: 10, completed: false },
-        'scout': { weight: 30, completed: false },
-        'analyst': { weight: 30, completed: false },
-        'orchestrator': { weight: 30, completed: false }
+        'scout': { weight: 45, completed: false },
+        'analyst': { weight: 45, completed: false }
     };
     
     // Socket.IO Event Listeners
@@ -56,10 +61,10 @@ document.addEventListener('DOMContentLoaded', function() {
         updateProgress(data.message);
     });
     
-    socket.on('orchestrator_log', (data) => {
-        addStatusMessage(data.message, 'orchestrator');
-        updateProgress(data.message);
-    });
+    // Try to load company ID from localStorage
+    if (localStorage.getItem('companyId')) {
+        companyIdInput.value = localStorage.getItem('companyId');
+    }
     
     // File Input Handling
     fileInput.addEventListener('change', function(e) {
@@ -88,8 +93,19 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         if (!uploadedFile) {
+            alert('Please select a file to upload');
             return;
         }
+        
+        const companyId = companyIdInput.value.trim();
+        if (!companyId) {
+            alert('Please enter a Company ID');
+            companyIdInput.focus();
+            return;
+        }
+        
+        // Save company ID to localStorage for next time
+        localStorage.setItem('companyId', companyId);
         
         // Show status section
         statusSection.style.display = 'block';
@@ -104,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Send file to server
         addStatusMessage('Uploading file...', 'system');
         
-        fetch('/upload', {
+        fetch('/api/upload', {
             method: 'POST',
             body: formData
         })
@@ -123,8 +139,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             addStatusMessage(`File processed successfully. Detected ${data.record_count} records.`, 'success');
             
-            // Now send for analysis with a default query about "key issues and actionable insights"
-            return analyzeData(uploadId, "What are the key issues and actionable insights from this feedback?");
+            // Get custom query if provided
+            const query = queryTextInput.value.trim() || 
+                          "What are the key issues and actionable insights from this feedback?";
+            
+            // Now send for analysis with query
+            return analyzeData(uploadId, query, companyId, saveAnalysisCheck.checked);
         })
         .catch(error => {
             addStatusMessage(`Error: ${error.message}`, 'error');
@@ -132,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Analysis Function
-    function analyzeData(uploadId, query) {
+    function analyzeData(uploadId, query, companyId, saveAnalysis) {
         addStatusMessage('Starting analysis process...', 'system');
         
         fetch('/analyze', {
@@ -140,7 +160,12 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ upload_id: uploadId, query: query })
+            body: JSON.stringify({ 
+                upload_id: uploadId, 
+                query: query,
+                company_id: companyId,
+                save_analysis: saveAnalysis
+            })
         })
         .then(response => response.json())
         .then(data => {
@@ -159,6 +184,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Display results
             displayResults(data);
+            
+            // Show saved notification if saved
+            if (data.saved && data.ticket_id) {
+                savedNotification.style.display = 'block';
+                savedText.textContent = `Analysis saved as Ticket #${data.ticket_id.substring(0, 8)}`;
+                viewDashboardLink.href = `/dashboard/${companyId}`;
+            } else {
+                savedNotification.style.display = 'none';
+            }
         })
         .catch(error => {
             addStatusMessage(`Error: ${error.message}`, 'error');
@@ -181,8 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
             progressSteps.scout.completed = true;
         } else if (message.includes('Analyst') || message.includes('analyst')) {
             progressSteps.analyst.completed = true;
-        } else if (message.includes('Orchestrator') || message.includes('orchestration') || message.includes('final')) {
-            progressSteps.orchestrator.completed = true;
         }
         
         updateProgressBar();
@@ -282,6 +314,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }
             
+            // Build tags HTML if tags exist
+            let tagsHtml = '';
+            if (issue.tags && issue.tags.length > 0) {
+                tagsHtml = `
+                    <div class="issue-tags">
+                        ${issue.tags.map(tag => `<span class="issue-tag">${tag}</span>`).join('')}
+                    </div>
+                `;
+            }
+            
             issueCard.innerHTML = `
                 <div class="issue-header">
                     <h4 class="issue-title">${issue.issue_type || 'Untitled Issue'}</h4>
@@ -290,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="issue-body">
                     <p class="issue-description">${issue.description || 'No description available'}</p>
                     <p class="issue-team"><strong>Team:</strong> ${issue.responsible_team || 'Unassigned'}</p>
+                    ${tagsHtml}
                     ${sourcesHtml}
                     <h5>Recommended Actions:</h5>
                     <ul class="actions-list">
@@ -385,9 +428,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // New Analysis Button
     newAnalysisBtn.addEventListener('click', function() {
         // Reset all inputs and state
-        uploadForm.reset();
+        fileInput.value = '';
         fileLabel.style.display = 'block';
         fileInfo.style.display = 'none';
+        queryTextInput.value = '';
+        saveAnalysisCheck.checked = true;
         uploadedFile = null;
         uploadId = null;
         analysisResults = null;
@@ -396,6 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Hide results and status sections
         resultsSection.style.display = 'none';
         statusSection.style.display = 'none';
+        savedNotification.style.display = 'none';
         
         // Clear status messages
         statusMessages.innerHTML = '<div class="message system">Ready to process your feedback</div>';

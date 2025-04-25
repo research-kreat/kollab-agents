@@ -1,0 +1,435 @@
+/* Dashboard Specific Styles */
+
+.dashboard-container {
+    max-width: 100%;
+    padding: 1rem 2rem;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.company-info {
+    text-align: center;
+}
+
+.company-info h2 {
+    margin-bottom: 0.25rem;
+    color: var(--text-color);
+}
+
+.company-info p {
+    color: var(--text-light);
+    margin-bottom: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.nav-link:hover {
+    background-color: #3a5bd4;
+    text-decoration: none;
+    transform: translateY(-2px);
+}
+
+.nav-link i {
+    margin-right: 0.5rem;
+}
+
+/* Stats Cards */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background-color: var(--card-color);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-card i {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-right: 1rem;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+/* Analysis Section */
+.analyses-section {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+    color: var(--primary-color);
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1rem;
+}
+
+.filter-select,
+.search-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e9ecef;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+}
+
+.search-input {
+    min-width: 250px;
+}
+
+/* Ticket Cards */
+.tickets-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.ticket-card {
+    border: 1px solid #e9ecef;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+}
+
+.ticket-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow);
+}
+
+.ticket-header {
+    background-color: #f8f9fa;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.ticket-id {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+.ticket-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: white;
+}
+
+.status-new {
+    background-color: var(--medium-color);
+}
+
+.status-processing {
+    background-color: var(--high-color);
+}
+
+.status-completed {
+    background-color: var(--low-color);
+}
+
+.status-failed {
+    background-color: var(--critical-color);
+}
+
+.ticket-body {
+    padding: 1rem;
+    flex-grow: 1;
+}
+
+.ticket-title {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+}
+
+.ticket-summary {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.ticket-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.ticket-actions {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+}
+
+.action-btn {
+    padding: 0.5rem 0.75rem;
+    background-color: #f8f9fa;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+}
+
+.action-btn i {
+    margin-right: 0.3rem;
+}
+
+.view-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.view-btn:hover {
+    background-color: #3a5bd4;
+}
+
+.status-btn:hover {
+    background-color: #e9ecef;
+}
+
+/* Status Dropdown */
+.status-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.status-dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    background-color: white;
+    min-width: 160px;
+    box-shadow: var(--shadow);
+    border-radius: var(--border-radius);
+    z-index: 1;
+    margin-bottom: 0.3rem;
+}
+
+.status-dropdown:hover .status-dropdown-content {
+    display: block;
+}
+
+.status-option {
+    padding: 0.75rem 1rem;
+    display: block;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.status-option:hover {
+    background-color: #f8f9fa;
+    text-decoration: none;
+}
+
+.status-option:first-child {
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+}
+
+.status-option:last-child {
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+}
+
+/* No Tickets Placeholder */
+.no-tickets {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.no-tickets i {
+    font-size: 3rem;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+.no-tickets p {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 2rem auto;
+    max-width: 900px;
+    width: 90%;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    position: relative;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin-bottom: 0;
+    color: var(--primary-color);
+}
+
+.close-modal {
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.close-modal:hover {
+    color: var(--primary-color);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.modal-loading {
+    text-align: center;
+    padding: 2rem;
+}
+
+.modal-loading i {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.modal-issues-list {
+    display: block;
+}
+
+.modal-issues-list .issue-card {
+    margin-bottom: 1.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .filter-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .filter-select,
+    .search-input {
+        width: 100%;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}

@@ -545,3 +545,58 @@ footer {
     margin: 0 auto;
     min-width: 200px;
 }
+
+.company-input,
+.query-input {
+    margin-bottom: 1.5rem;
+}
+
+.company-input label,
+.query-input label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.company-input input,
+.query-input textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e9ecef;
+    border-radius: var(--border-radius);
+    font-family: inherit;
+    transition: var(--transition);
+}
+
+.company-input input:focus,
+.query-input textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.company-help {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 0.5rem;
+}
+
+.query-input textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.save-option {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.save-option label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.save-option input[type="checkbox"] {
+    margin-right: 0.75rem;
+}

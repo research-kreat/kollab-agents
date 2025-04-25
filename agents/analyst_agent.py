@@ -43,6 +43,10 @@ class AnalystAgent:
                 formatted_text.append(f"  {i}. Type: {issue.get('type', 'Unknown issue type')}")
                 formatted_text.append(f"     Priority: {issue.get('priority', 'Not specified')}")
                 
+                # Add tags if present
+                if 'tags' in issue and issue['tags']:
+                    formatted_text.append(f"     Tags: {', '.join(issue['tags'])}")
+                
                 if 'key_details' in issue and issue['key_details']:
                     formatted_text.append(f"     Key Details: {issue['key_details']}")
                 
@@ -84,9 +88,128 @@ class AnalystAgent:
         
         return "\n".join(formatted_text)
 
+    def generate_final_report(self, analyst_insights, scout_analysis, query, metadata):
+        """
+        Generate final report from analyst insights and scout analysis
+        
+        Args:
+            analyst_insights: Dict containing analyst insights
+            scout_analysis: Dict containing scout analysis
+            query: Original query string
+            metadata: Metadata about the analysis
+            
+        Returns:
+            Dict containing final report
+        """
+        self.emit_log("Generating final report...")
+        
+        # Extract issues from analyst team assignments
+        issues = []
+        
+        if 'team_assignments' in analyst_insights:
+            for assignment in analyst_insights['team_assignments']:
+                # Find the matching issue in scout analysis for tags
+                tags = []
+                if 'issue_type' in assignment and scout_analysis.get('issue_types'):
+                    for scout_issue in scout_analysis.get('issue_types', []):
+                        if scout_issue.get('type') == assignment.get('issue_type'):
+                            tags = scout_issue.get('tags', [])
+                            break
+                
+                issue = {
+                    'issue_type': assignment.get('issue_type', 'Unknown Issue'),
+                    'description': assignment.get('resolution_strategy', 'No description available'),
+                    'responsible_team': assignment.get('responsible_team', 'Unassigned'),
+                    'criticality': assignment.get('criticality', 'Medium'),
+                    'recommended_actions': assignment.get('recommended_actions', []),
+                    'resolution_strategy': assignment.get('resolution_strategy', 'No strategy provided'),
+                    'sources': assignment.get('sources', []),
+                    'tags': tags,
+                    'timeline': self._determine_timeline(assignment.get('criticality', 'Medium'))
+                }
+                issues.append(issue)
+        
+        # Build implementation plan based on issue criticality
+        implementation_plan = {
+            'immediate_actions': [],
+            'short_term_actions': [],
+            'long_term_actions': []
+        }
+        
+        for issue in issues:
+            timeline = issue.get('timeline', 'short-term')
+            
+            # Take first action from each issue based on timeline
+            if issue.get('recommended_actions'):
+                action = f"{issue.get('issue_type')} - {issue.get('recommended_actions')[0]}"
+                
+                if timeline == 'immediate':
+                    implementation_plan['immediate_actions'].append(action)
+                elif timeline == 'short-term':
+                    implementation_plan['short_term_actions'].append(action)
+                else:
+                    implementation_plan['long_term_actions'].append(action)
+        
+        # Generate cross-team initiatives from analyst insights
+        cross_team_initiatives = []
+        
+        if 'cross_team_recommendations' in analyst_insights and analyst_insights['cross_team_recommendations']:
+            for i, recommendation in enumerate(analyst_insights['cross_team_recommendations']):
+                initiative = {
+                    'name': f"Initiative {i+1}",
+                    'description': recommendation,
+                    'teams_involved': self._extract_teams_from_text(recommendation),
+                    'expected_outcome': f"Resolving cross-functional issues related to {recommendation.split()[0:5]}..."
+                }
+                cross_team_initiatives.append(initiative)
+        
+        # Build executive summary
+        executive_summary = scout_analysis.get('summary', 'No summary available')
+        if len(executive_summary) < 100 and 'overall_sentiment' in scout_analysis:
+            executive_summary += f" Overall sentiment is {scout_analysis['overall_sentiment'].lower()}."
+        
+        # Final report structure
+        final_report = {
+            'executive_summary': executive_summary,
+            'issues': issues,
+            'cross_team_initiatives': cross_team_initiatives,
+            'implementation_plan': implementation_plan
+        }
+        
+        return final_report
+        
+    def _determine_timeline(self, criticality):
+        """Determine timeline based on criticality"""
+        criticality = criticality.lower() if criticality else 'medium'
+        
+        if criticality == 'critical':
+            return 'immediate'
+        elif criticality == 'high':
+            return 'immediate'
+        elif criticality == 'medium':
+            return 'short-term'
+        else:
+            return 'long-term'
+            
+    def _extract_teams_from_text(self, text):
+        """Extract potential team names from recommendation text"""
+        common_teams = ['Product', 'Engineering', 'Support', 'QA', 'Marketing', 
+                      'Sales', 'Design', 'Customer Success', 'Operations', 'Finance']
+        
+        found_teams = []
+        for team in common_teams:
+            if team.lower() in text.lower():
+                found_teams.append(team)
+        
+        # If no teams found, add product and engineering as defaults
+        if not found_teams:
+            found_teams = ['Product', 'Engineering']
+            
+        return found_teams
+        
     def process_analyst_query(self, scout_results):
         """
-        Process data with the Analyst Agent
+        Process data with the Analyst Agent and generate final report
         
         Args:
             scout_results: Dict containing results from the Scout Agent
@@ -101,6 +224,7 @@ class AnalystAgent:
             return scout_results
         
         process_id = scout_results.get('process_id', 'unknown')
+        company_id = scout_results.get('company_id', 'default_company')
         query = scout_results.get('query', '')
         scout_analysis = scout_results.get('scout_analysis', {})
         metadata = scout_results.get('metadata', {})
@@ -179,32 +303,43 @@ class AnalystAgent:
                 
                 if json_start >= 0 and json_end > json_start:
                     json_str = result_str[json_start:json_end]
-                    parsed_result = json.loads(json_str)
+                    analyst_insights = json.loads(json_str)
                 else:
-                    parsed_result = {"error": "Could not extract JSON from response"}
+                    analyst_insights = {"error": "Could not extract JSON from response"}
                     
             except json.JSONDecodeError:
                 self.emit_log("⚠️ Error parsing JSON from LLM response")
-                parsed_result = {"error": "Invalid JSON format in response"}
-                
+                analyst_insights = {"error": "Invalid JSON format in response"}
+            
+            # Generate final report directly (replacing orchestrator)
+            final_report = self.generate_final_report(
+                analyst_insights=analyst_insights,
+                scout_analysis=scout_analysis,
+                query=query,
+                metadata=metadata
+            )
+            
             # Add metadata to the result
             final_result = {
                 'process_id': process_id,
+                'company_id': company_id,
                 'timestamp': int(time.time()),
                 'query': query,
                 'scout_analysis': scout_analysis,
                 'metadata': metadata if metadata else {
                     'record_count': scout_results.get('record_count', 0)
                 },
-                'analyst_insights': parsed_result
+                'analyst_insights': analyst_insights,
+                'final_report': final_report
             }
             
-            self.emit_log("Analyst evaluation complete")
+            self.emit_log("Analysis and report generation complete")
             return final_result
             
         except Exception as e:
             self.emit_log(f"⚠️ Error in Analyst processing: {str(e)}")
             return {
                 'error': f'Analysis failed: {str(e)}',
-                'process_id': process_id
+                'process_id': process_id,
+                'company_id': company_id
             }
