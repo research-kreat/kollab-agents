@@ -1,7 +1,7 @@
 # =============================
 # Imports
 # =============================
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
 import os
@@ -135,6 +135,11 @@ def analyze_data():
 
         logger.info(f"Analysis completed for process {process_id}")
         
+        # Initialize status for each issue
+        if 'final_report' in final_results and 'issues' in final_results['final_report']:
+            for issue in final_results['final_report']['issues']:
+                issue['status'] = 'new'
+        
         if save_analysis:
             save_result = storage.save_analysis(final_results, company_id)
             final_results['saved'] = save_result['success']
@@ -207,21 +212,22 @@ def get_analysis(company_id, ticket_id):
         return jsonify(result)
     return jsonify({'success': False, 'error': result['error']}), 404
 
-@app.route('/api/analysis/status', methods=['POST'])
-def update_analysis_status():
-    """Update status of a ticket"""
+@app.route('/api/task/status', methods=['POST'])
+def update_task_status():
+    """Update status of a specific task"""
     data = request.json
     if not data:
         return jsonify({'error': 'No data provided'}), 400
-
+        
     company_id = data.get('company_id')
     ticket_id = data.get('ticket_id')
+    task_index = data.get('task_index')
     new_status = data.get('status')
-
-    if not all([company_id, ticket_id, new_status]):
+    
+    if not all([company_id, ticket_id, new_status]) or task_index is None:
         return jsonify({'error': 'Missing required parameters'}), 400
-
-    result = storage.update_analysis_status(company_id, ticket_id, new_status)
+        
+    result = storage.update_task_status(company_id, ticket_id, task_index, new_status)
     if result['success']:
         return jsonify(result)
     return jsonify({'success': False, 'error': result['error']}), 500

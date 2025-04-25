@@ -182,6 +182,7 @@
     color: white;
 }
 
+/* Status Styles for Tickets */
 .status-new {
     background-color: var(--medium-color);
 }
@@ -192,6 +193,38 @@
 
 .status-resolved {
     background-color: var(--low-color);
+}
+
+/* Status Styles for Task Badges */
+.task-status-badge,
+.issue-status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-left: 0.5rem;
+}
+
+.task-status-badge.status-new,
+.issue-status-badge.status-new {
+    background-color: #e0f7fa;
+    color: #006064;
+    border: 1px solid #00838f;
+}
+
+.task-status-badge.status-processing,
+.issue-status-badge.status-processing {
+    background-color: #fff8e1;
+    color: #ff6f00;
+    border: 1px solid #ffa000;
+}
+
+.task-status-badge.status-resolved,
+.issue-status-badge.status-resolved {
+    background-color: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #2e7d32;
 }
 
 .ticket-body {
@@ -205,7 +238,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
-    -webkit-line-clamp: 1;
+    line-clamp: 1;
     -webkit-box-orient: vertical;
 }
 
@@ -216,7 +249,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
 }
 
@@ -225,6 +258,41 @@
     justify-content: space-between;
     font-size: 0.8rem;
     color: var(--text-light);
+}
+
+.ticket-task-status {
+    display: flex;
+    margin-left: 1rem;
+}
+
+.task-count {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-right: 0.25rem;
+}
+
+.task-count.new {
+    background-color: #e0f7fa;
+    color: #006064;
+    border: 1px solid #00838f;
+}
+
+.task-count.processing {
+    background-color: #fff8e1;
+    color: #ff6f00;
+    border: 1px solid #ffa000;
+}
+
+.task-count.resolved {
+    background-color: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #2e7d32;
 }
 
 .ticket-actions {
@@ -259,57 +327,6 @@
     background-color: #3a5bd4;
 }
 
-.status-btn:hover {
-    background-color: #e9ecef;
-}
-
-/* Status Dropdown */
-.status-dropdown {
-    position: relative;
-    display: inline-block;
-}
-
-.status-dropdown-content {
-    display: none;
-    position: absolute;
-    right: 0;
-    bottom: 100%;
-    background-color: white;
-    min-width: 160px;
-    box-shadow: var(--shadow);
-    border-radius: var(--border-radius);
-    z-index: 1;
-    margin-bottom: 0.3rem;
-}
-
-.status-dropdown:hover .status-dropdown-content {
-    display: block;
-}
-
-.status-option {
-    padding: 0.75rem 1rem;
-    display: block;
-    color: var(--text-color);
-    font-size: 0.9rem;
-    text-decoration: none;
-    transition: var(--transition);
-}
-
-.status-option:hover {
-    background-color: #f8f9fa;
-    text-decoration: none;
-}
-
-.status-option:first-child {
-    border-top-left-radius: var(--border-radius);
-    border-top-right-radius: var(--border-radius);
-}
-
-.status-option:last-child {
-    border-bottom-left-radius: var(--border-radius);
-    border-bottom-right-radius: var(--border-radius);
-}
-
 /* No Tickets Placeholder */
 .no-tickets {
     grid-column: 1 / -1;
@@ -337,6 +354,70 @@
     margin-bottom: 2rem;
 }
 
+.task-status-dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: #f9f9f9;
+    min-width: 120px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 10;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.task-status-dropdown-content a {
+    color: black;
+    padding: 8px 10px;
+    text-decoration: none;
+    display: block;
+    font-size: 0.85rem;
+}
+
+.task-status-dropdown-content a:hover {
+    background-color: #f1f1f1;
+    border-radius: 4px;
+}
+
+/* Task Status Summary Section */
+.task-status-summary {
+    display: flex;
+    justify-content: space-between;
+    background-color: #f5f5f5;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+}
+
+.task-status-count {
+    text-align: center;
+    padding: 0.5rem 1rem;
+}
+
+.task-status-count .count {
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.task-status-count .label {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.task-status-count.new .count {
+    color: #00838f;
+}
+
+.task-status-count.processing .count {
+    color: #ff6f00;
+}
+
+.task-status-count.resolved .count {
+    color: #2e7d32;
+}
+
 .task-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -345,18 +426,40 @@
 }
 
 .task-card {
-    border: 1px solid #e9ecef;
-    border-radius: var(--border-radius);
+    position: relative;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     overflow: hidden;
 }
 
-.task-header {
-    background-color: #f8f9fa;
-    padding: 0.75rem 1rem;
+/* Status Indicators on Task Cards */
+.task-card[data-status="new"] {
+    border-left: 4px solid #00838f;
+}
+
+.task-card[data-status="processing"] {
+    border-left: 4px solid #ffa000;
+}
+
+.task-card[data-status="resolved"] {
+    border-left: 4px solid #2e7d32;
+}
+
+.task-header,
+.issue-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #e9ecef;
+}
+
+.task-header-right,
+.issue-header-right {
+    display: flex;
+    align-items: center;
 }
 
 .task-title {
@@ -371,6 +474,22 @@
     font-size: 0.8rem;
     font-weight: 500;
     color: white;
+}
+
+.badge-critical {
+    background-color: var(--critical-color);
+}
+
+.badge-high {
+    background-color: var(--high-color);
+}
+
+.badge-medium {
+    background-color: var(--medium-color);
+}
+
+.badge-low {
+    background-color: var(--low-color);
 }
 
 .task-body {
@@ -399,6 +518,31 @@
     padding: 0.2rem 0.5rem;
     border-radius: 4px;
     font-size: 0.8rem;
+}
+
+/* Task Status Controls */
+.task-status-controls {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-left: 0.5rem;
+}
+
+.task-status-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    margin-left: 0.25rem;
+}
+
+.task-status-btn:hover {
+    color: var(--primary-color);
+}
+
+.task-status-dropdown {
+    position: relative;
+    display: inline-block;
 }
 
 /* Initiatives List */

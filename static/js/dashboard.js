@@ -45,18 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Status update options
-    statusOptions.forEach(option => {
-        option.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const ticketId = this.getAttribute('data-ticket-id');
-            const newStatus = this.getAttribute('data-status');
-            
-            updateTicketStatus(ticketId, newStatus);
-        });
-    });
-    
     // Filter tickets by status
     statusFilter.addEventListener('change', function() {
         filterTickets();
@@ -161,6 +149,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Render summary
         taskSummary.textContent = analysis.final_report?.executive_summary || 'No summary available';
         
+        // Update task status counts
+        updateTaskStatusSummary(analysis.final_report?.issues || []);
+        
         // Render tasks/issues
         renderTaskList(analysis.final_report?.issues || []);
         
@@ -174,6 +165,86 @@ document.addEventListener('DOMContentLoaded', function() {
         taskDetailsSection.scrollIntoView({ behavior: 'smooth' });
     }
     
+    // Update task status summary counters
+    function updateTaskStatusSummary(tasks) {
+        const countNew = document.getElementById('task-count-new');
+        const countProcessing = document.getElementById('task-count-processing');
+        const countResolved = document.getElementById('task-count-resolved');
+        
+        // Reset counts
+        let newCount = 0;
+        let processingCount = 0;
+        let resolvedCount = 0;
+        
+        // Count tasks by status
+        tasks.forEach(task => {
+            const status = task.status || 'new';
+            if (status === 'new') newCount++;
+            else if (status === 'processing') processingCount++;
+            else if (status === 'resolved') resolvedCount++;
+        });
+        
+        // Update UI
+        countNew.textContent = newCount;
+        countProcessing.textContent = processingCount;
+        countResolved.textContent = resolvedCount;
+    }
+    
+    // Handle task status update
+    function updateTaskStatus(ticketId, taskIndex, newStatus) {
+        fetch('/api/task/status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                company_id: companyId,
+                ticket_id: ticketId,
+                task_index: parseInt(taskIndex),
+                status: newStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the task status in the UI
+                const taskCard = document.querySelector(`.task-card[data-task-index="${taskIndex}"]`);
+                if (taskCard) {
+                    const statusBadge = taskCard.querySelector('.task-status-badge');
+                    if (statusBadge) {
+                        statusBadge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                        statusBadge.className = `task-status-badge status-${newStatus}`;
+                    }
+                }
+                
+                // If overall status changed, update it in the ticket card
+                if (data.overall_status) {
+                    const ticketCard = document.querySelector(`.ticket-card[data-ticket-id="${ticketId}"]`);
+                    if (ticketCard) {
+                        ticketCard.setAttribute('data-status', data.overall_status);
+                        const statusElement = ticketCard.querySelector('.ticket-status');
+                        if (statusElement) {
+                            statusElement.textContent = data.overall_status.charAt(0).toUpperCase() + data.overall_status.slice(1);
+                            statusElement.className = `ticket-status status-${data.overall_status}`;
+                        }
+                    }
+                }
+                
+                // Update the task status summary
+                if (currentAnalysisData && currentAnalysisData.final_report && currentAnalysisData.final_report.issues) {
+                    const issues = currentAnalysisData.final_report.issues;
+                    issues[taskIndex].status = newStatus;
+                    updateTaskStatusSummary(issues);
+                }
+            } else {
+                alert('Failed to update task status: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            alert('Error updating task status: ' + error);
+        });
+    }
+    
     // Render task list
     function renderTaskList(tasks) {
         taskList.innerHTML = '';
@@ -183,12 +254,16 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        tasks.forEach(task => {
+        tasks.forEach((task, index) => {
             const taskCard = document.createElement('div');
             taskCard.className = 'task-card';
+            taskCard.setAttribute('data-task-index', index);
             
             // Determine badge class based on criticality
             const badgeClass = `badge-${task.criticality ? task.criticality.toLowerCase() : 'medium'}`;
+            
+            // Get task status (default to 'new' if not set)
+            const taskStatus = task.status || 'new';
             
             // Build source list HTML if sources exist
             let sourcesHtml = '';
@@ -222,10 +297,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }
             
+            // Task status dropdown
+            const statusDropdownHtml = `
+                <div class="task-status-controls">
+                    <span class="task-status-badge status-${taskStatus}">${taskStatus.charAt(0).toUpperCase() + taskStatus.slice(1)}</span>
+                    <div class="task-status-dropdown">
+                        <button class="task-status-btn"><i class="fas fa-caret-down"></i></button>
+                        <div class="task-status-dropdown-content">
+                            <a href="#" class="task-status-option" data-status="new" data-task-index="${index}">New</a>
+                            <a href="#" class="task-status-option" data-status="processing" data-task-index="${index}">Processing</a>
+                            <a href="#" class="task-status-option" data-status="resolved" data-task-index="${index}">Resolved</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
             taskCard.innerHTML = `
                 <div class="task-header">
                     <h4 class="task-title">${task.issue_type || 'Untitled Task'}</h4>
-                    <span class="task-badge ${badgeClass}">${task.criticality || 'Medium'}</span>
+                    <div class="task-header-right">
+                        <span class="task-badge ${badgeClass}">${task.criticality || 'Medium'}</span>
+                        ${statusDropdownHtml}
+                    </div>
                 </div>
                 <div class="task-body">
                     <p class="task-description">${task.description || 'No description available'}</p>
@@ -240,9 +333,48 @@ document.addEventListener('DOMContentLoaded', function() {
             
             taskList.appendChild(taskCard);
         });
+        
+        // Add event listeners for status dropdown buttons
+        document.querySelectorAll('.task-status-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Toggle dropdown visibility
+                const dropdown = this.nextElementSibling;
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+                
+                // Close all other dropdowns
+                document.querySelectorAll('.task-status-dropdown-content').forEach(dd => {
+                    if (dd !== dropdown) dd.style.display = 'none';
+                });
+            });
+        });
+        
+        // Add event listeners for status options
+        document.querySelectorAll('.task-status-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const taskIndex = this.getAttribute('data-task-index');
+                const newStatus = this.getAttribute('data-status');
+                
+                // Close dropdown
+                this.closest('.task-status-dropdown-content').style.display = 'none';
+                
+                // Update status
+                updateTaskStatus(currentTicketId, taskIndex, newStatus);
+            });
+        });
+        
+        // Close dropdown when clicking elsewhere
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.task-status-dropdown-content').forEach(dropdown => {
+                dropdown.style.display = 'none';
+            });
+        });
     }
     
-    // Render implementation plan for tasks
+    // Render task implementation plan
     function renderTaskImplementationPlan(plan) {
         taskTimeline.innerHTML = '';
         
@@ -365,39 +497,6 @@ document.addEventListener('DOMContentLoaded', function() {
         currentTicketId = null;
     }
     
-    // Update ticket status
-    function updateTicketStatus(ticketId, newStatus) {
-        fetch(`/api/analysis/status`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                company_id: companyId,
-                ticket_id: ticketId,
-                status: newStatus
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update UI status
-                const card = document.querySelector(`.ticket-card[data-ticket-id="${ticketId}"]`);
-                if (card) {
-                    card.setAttribute('data-status', newStatus);
-                    const statusElement = card.querySelector('.ticket-status');
-                    statusElement.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
-                    statusElement.className = `ticket-status status-${newStatus}`;
-                }
-            } else {
-                alert('Failed to update status: ' + (data.error || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            alert('Error updating status: ' + error);
-        });
-    }
-    
     // Download analysis as JSON
     function downloadAnalysis(ticketId) {
         fetch(`/api/analysis/${companyId}/${ticketId}`)
@@ -448,12 +547,16 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        issues.forEach(issue => {
+        issues.forEach((issue, index) => {
             const issueCard = document.createElement('div');
             issueCard.className = 'issue-card';
+            issueCard.setAttribute('data-issue-index', index);
             
             // Determine badge class based on criticality
             const badgeClass = `badge-${issue.criticality ? issue.criticality.toLowerCase() : 'medium'}`;
+            
+            // Get task status (default to 'new' if not set)
+            const issueStatus = issue.status || 'new';
             
             // Build source list HTML if sources exist
             let sourcesHtml = '';
@@ -476,10 +579,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }
             
+            // Task status indicator
+            const statusIndicatorHtml = `
+                <span class="issue-status-badge status-${issueStatus}">
+                    ${issueStatus.charAt(0).toUpperCase() + issueStatus.slice(1)}
+                </span>
+            `;
+            
             issueCard.innerHTML = `
                 <div class="issue-header">
                     <h4 class="issue-title">${issue.issue_type || 'Untitled Issue'}</h4>
-                    <span class="issue-badge ${badgeClass}">${issue.criticality || 'Medium'}</span>
+                    <div class="issue-header-right">
+                        <span class="issue-badge ${badgeClass}">${issue.criticality || 'Medium'}</span>
+                        ${statusIndicatorHtml}
+                    </div>
                 </div>
                 <div class="issue-body">
                     <p class="issue-description">${issue.description || 'No description available'}</p>

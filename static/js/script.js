@@ -154,6 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Analysis Function
     function analyzeData(uploadId, query, companyId, saveAnalysis) {
         addStatusMessage('Starting analysis process...', 'system');
+        analyzeBtn.disabled = true;
         
         fetch('/analyze', {
             method: 'POST',
@@ -193,9 +194,11 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 savedNotification.style.display = 'none';
             }
+            analyzeBtn.disabled = false;
         })
         .catch(error => {
             addStatusMessage(`Error: ${error.message}`, 'error');
+            analyzeBtn.disabled = false;
         });
     }
     

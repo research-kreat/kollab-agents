@@ -85,22 +85,19 @@
                                 <div class="ticket-meta">
                                     <span class="ticket-date">{{ analysis.created_at|timestamp_to_date }}</span>
                                     <span class="ticket-issues">{{ analysis.issue_count }} issues</span>
+                                    {% if analysis.task_status_counts %}
+                                    <span class="ticket-task-status">
+                                        <span class="task-count new">{{ analysis.task_status_counts.new }}</span>
+                                        <span class="task-count processing">{{ analysis.task_status_counts.processing }}</span>
+                                        <span class="task-count resolved">{{ analysis.task_status_counts.resolved }}</span>
+                                    </span>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="ticket-actions">
                                 <button class="action-btn spread-tasks-btn" data-ticket-id="{{ analysis.ticket_id }}">
-                                    <i class="fas fa-tasks"></i> Spread Tasks
+                                    <i class="fas fa-tasks"></i> Manage Tasks
                                 </button>
-                                <div class="status-dropdown">
-                                    <button class="action-btn status-btn">
-                                        <i class="fas fa-cog"></i> Status
-                                    </button>
-                                    <div class="status-dropdown-content">
-                                        <a href="#" class="status-option" data-status="new" data-ticket-id="{{ analysis.ticket_id }}">New</a>
-                                        <a href="#" class="status-option" data-status="processing" data-ticket-id="{{ analysis.ticket_id }}">Processing</a>
-                                        <a href="#" class="status-option" data-status="resolved" data-ticket-id="{{ analysis.ticket_id }}">Resolved</a>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                         {% endfor %}
@@ -126,6 +123,22 @@
                 <div class="executive-summary">
                     <h3>Executive Summary</h3>
                     <p id="task-summary"></p>
+                </div>
+                
+                <!-- Task Status Summary Section -->
+                <div class="task-status-summary">
+                    <div class="task-status-count new">
+                        <span class="count" id="task-count-new">0</span>
+                        <span class="label">New</span>
+                    </div>
+                    <div class="task-status-count processing">
+                        <span class="count" id="task-count-processing">0</span>
+                        <span class="label">Processing</span>
+                    </div>
+                    <div class="task-status-count resolved">
+                        <span class="count" id="task-count-resolved">0</span>
+                        <span class="label">Resolved</span>
+                    </div>
                 </div>
                 
                 <div class="task-container">
