@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show saved notification if saved
             if (data.saved && data.ticket_id) {
                 savedNotification.style.display = 'block';
-                savedText.textContent = `Analysis saved as Ticket #${data.ticket_id.substring(0, 8)}`;
+                savedText.textContent = `Analysis saved as Ticket #${data.ticket_id}`;
                 viewDashboardLink.href = `/dashboard/${companyId}`;
             } else {
                 savedNotification.style.display = 'none';

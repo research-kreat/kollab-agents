@@ -512,7 +512,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show saved notification if saved
                 if (data.saved && data.ticket_id) {
                     document.getElementById('saved-notification').style.display = 'block';
-                    document.getElementById('saved-text').textContent = `Analysis saved as Ticket #${data.ticket_id.substring(0, 8)}`;
+                    document.getElementById('saved-text').textContent = `Analysis saved as Ticket #${data.ticket_id}`;
                     document.getElementById('view-dashboard-link').href = `/dashboard/${companyId}`;
                 } else {
                     document.getElementById('saved-notification').style.display = 'none';
