@@ -47,6 +47,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // OAuth connect button - direct connection without filling anything
+    oauthConnectBtn.addEventListener('click', function() {
+        // Show loading state
+        integrationAuthForm.style.display = 'none';
+        integrationLoading.style.display = 'block';
+        
+        // Simulate OAuth process
+        simulateOAuth(currentSource);
+    });
+    
+    // Connect button in modal (used after selecting files)
+    integrationConnectBtn.addEventListener('click', function() {
+        if (integrationSourceSelect.style.display !== 'none') {
+            // Source selection is visible, handle selected files
+            const selectedFiles = getSelectedFilesFromTree();
+            
+            if (selectedFiles.length === 0) {
+                alert('Please select at least one file to import');
+                return;
+            }
+            
+            // Add connected source to the list
+            addConnectedSource(currentSource, selectedFiles);
+            
+            // Close modal
+            closeIntegrationModal();
+            
+            // Enable analyze button
+            analyzeBtn.disabled = false;
+        }
+    });
+    
     // Function to open integration modal
     function openIntegrationModal(source) {
         currentSource = source;
@@ -60,6 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
         integrationSourceSelect.style.display = 'none';
         sourceTree.innerHTML = '';
         
+        // Show modal
         integrationModal.style.display = 'block';
     }
     
@@ -82,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
             integrationLoading.style.display = 'none';
             integrationSourceSelect.style.display = 'block';
             
-            // Populate sample data
+            // Populate file tree
             populateSourceTree(source);
         }, 1500);
     }
@@ -256,17 +289,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Function to save connection
-    function saveConnection(source, username) {
-        // Store basic connection info (not the actual credentials for security reasons)
-        const connections = JSON.parse(localStorage.getItem('savedConnections') || '{}');
-        connections[source] = {
-            username: username,
-            lastConnected: new Date().toISOString()
-        };
-        localStorage.setItem('savedConnections', JSON.stringify(connections));
-    }
-    
     // Function to load saved connections
     function loadSavedConnections() {
         // Load connected sources
@@ -274,10 +296,6 @@ document.addEventListener('DOMContentLoaded', function() {
         connectedSourcesList = sources;
         updateConnectedSourcesUI();
     }
-    
-    // Make these functions available to script.js
-    window.renderIssues = renderIssues;
-    window.renderImplementationPlan = renderImplementationPlan;
     
     // Expose the integration handler to the main script
     window.integrationHandler = {
