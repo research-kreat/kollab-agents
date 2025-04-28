@@ -476,22 +476,6 @@
     color: white;
 }
 
-.badge-critical {
-    background-color: var(--critical-color);
-}
-
-.badge-high {
-    background-color: var(--high-color);
-}
-
-.badge-medium {
-    background-color: var(--medium-color);
-}
-
-.badge-low {
-    background-color: var(--low-color);
-}
-
 .task-body {
     padding: 1rem;
 }
