@@ -280,7 +280,7 @@ class ScoutAgent:
             {{
                 "issue_types": [
                     {{
-                        "type": "Issue name",
+                        "type": "Give proper issue name",
                         "examples": ["Example 1", "Example 2"],
                         "priority": "High/Medium/Low",
                         "key_details": "Important details",

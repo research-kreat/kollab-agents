@@ -257,7 +257,7 @@ class AnalystAgent:
             {{
                 "team_assignments": [
                     {{
-                        "issue_type": "Issue name",
+                        "issue_type": "Give proper issue name",
                         "responsible_team": "Primary team",
                         "supporting_teams": ["Team 1", "Team 2"],
                         "criticality": "Critical/High/Medium/Low",
