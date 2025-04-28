@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Socket.IO Event Listeners
     socket.on('connect', () => {
-        addStatusMessage('Connected to server', 'system');
+        addStatusMessage('Connected to server from client', 'system');
     });
     
     socket.on('disconnect', () => {
