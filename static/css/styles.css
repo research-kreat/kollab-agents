@@ -772,10 +772,6 @@ textarea {
     color: var(--text-medium);
 }
 
-.auth-form-fields {
-    margin-bottom: 1.5rem;
-}
-
 .form-group {
     margin-bottom: 1rem;
 }
@@ -793,46 +789,6 @@ textarea {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     font-size: 1rem;
-}
-
-.auth-option {
-    display: flex;
-    align-items: center;
-}
-
-.auth-option label {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0;
-    cursor: pointer;
-}
-
-.auth-option input[type="checkbox"] {
-    margin-right: 0.5rem;
-}
-
-.auth-alternative {
-    text-align: center;
-    margin: 1.5rem 0;
-    position: relative;
-}
-
-.auth-alternative:before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background-color: var(--border-color);
-    z-index: 1;
-}
-
-.auth-alternative span {
-    position: relative;
-    background-color: white;
-    padding: 0 1rem;
-    z-index: 2;
 }
 
 #oauth-connect-btn {

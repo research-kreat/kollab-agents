@@ -291,6 +291,21 @@ def analyze_with_integrations():
         socketio.emit('status', {'message': f'Error: {str(e)}'})
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/integrations/files')
+def get_integration_files():
+    """Endpoint to get files available from an integration source"""
+    source = request.args.get('source')
+    if not source:
+        return jsonify({'success': False, 'error': 'No source specified'}), 400
+    
+    try:
+        # Get file structure from the integration handler
+        files = integration_handler.get_source_file_structure(source)
+        return jsonify({'success': True, 'files': files})
+    except Exception as e:
+        logger.error(f"Error getting files for {source}: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/analysis/<company_id>/<ticket_id>')
 def get_analysis(company_id, ticket_id):
     """Fetch specific analysis record"""

@@ -1,462 +1,319 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Connect to Socket.IO
-    const socket = io();
-    
-    // DOM Elements
-    const uploadForm = document.getElementById('upload-form');
-    const fileInput = document.getElementById('file-input');
-    const fileLabel = document.getElementById('file-label');
-    const fileInfo = document.getElementById('file-info');
-    const fileName = document.getElementById('file-name');
-    const removeFileBtn = document.getElementById('remove-file');
+    // DOM Elements for Integration
+    const integrationIcons = document.querySelectorAll('.integration-icon');
+    const connectedSources = document.getElementById('connected-sources');
+    const integrationModal = document.getElementById('integration-modal');
+    const sourceName = document.getElementById('source-name');
+    const integrationLoading = document.getElementById('integration-loading');
+    const integrationAuthForm = document.getElementById('integration-auth-form');
+    const integrationSourceSelect = document.getElementById('integration-source-select');
+    const sourceTree = document.getElementById('source-tree');
+    const integrationCancelBtn = document.getElementById('integration-cancel-btn');
+    const integrationConnectBtn = document.getElementById('integration-connect-btn');
+    const oauthConnectBtn = document.getElementById('oauth-connect-btn');
+    const closeModalBtn = document.querySelector('#integration-modal .close-modal');
     const analyzeBtn = document.getElementById('analyze-btn');
-    const statusSection = document.getElementById('status-section');
-    const statusMessages = document.getElementById('status-messages');
-    const progressBar = document.getElementById('progress');
-    const resultsSection = document.getElementById('results-section');
-    const summaryContent = document.getElementById('summary-content');
-    const issuesList = document.getElementById('issues-list');
-    const timelineContainer = document.getElementById('timeline-container');
-    const downloadJsonBtn = document.getElementById('download-json');
-    const newAnalysisBtn = document.getElementById('new-analysis');
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    const companyIdInput = document.getElementById('company-id');
-    const queryTextInput = document.getElementById('query-text');
-    const saveAnalysisCheck = document.getElementById('save-analysis');
-    const savedNotification = document.getElementById('saved-notification');
-    const savedText = document.getElementById('saved-text');
-    const viewDashboardLink = document.getElementById('view-dashboard-link');
     
     // Variables
-    let uploadedFile = null;
-    let analysisResults = null;
-    let progressSteps = {
-        'upload': { weight: 10, completed: false },
-        'scout': { weight: 45, completed: false },
-        'analyst': { weight: 45, completed: false }
-    };
+    let currentSource = null;
+    let connectedSourcesList = {};
     
-    // Socket.IO Event Listeners
-    socket.on('connect', () => {
-        addStatusMessage('Connected to server from client', 'system');
-    });
+    // Checking for saved connections in localStorage
+    loadSavedConnections();
     
-    socket.on('disconnect', () => {
-        addStatusMessage('Disconnected from server', 'error');
-    });
-    
-    socket.on('status', (data) => {
-        addStatusMessage(data.message);
-        updateProgress(data.message);
-    });
-    
-    socket.on('scout_log', (data) => {
-        addStatusMessage(data.message, 'scout');
-        updateProgress(data.message);
-    });
-    
-    socket.on('analyst_log', (data) => {
-        addStatusMessage(data.message, 'analyst');
-        updateProgress(data.message);
-    });
-    
-    // Try to load company ID from localStorage
-    if (localStorage.getItem('companyId')) {
-        companyIdInput.value = localStorage.getItem('companyId');
-    }
-    
-    // File Input Handling
-    fileInput.addEventListener('change', function(e) {
-        if (fileInput.files.length > 0) {
-            uploadedFile = fileInput.files[0];
-            fileName.textContent = uploadedFile.name;
-            fileLabel.style.display = 'none';
-            fileInfo.style.display = 'flex';
+    // Click event for integration icons
+    integrationIcons.forEach(icon => {
+        icon.addEventListener('click', function() {
+            const source = this.getAttribute('data-source');
+            if (source === 'more') {
+                // Show more integrations options
+                showMoreIntegrations();
+                return;
+            }
             
-            // Enable analyze button when file is selected
+            // Open modal for the selected source
+            openIntegrationModal(source);
+        });
+    });
+    
+    // Close modal
+    closeModalBtn.addEventListener('click', closeIntegrationModal);
+    integrationCancelBtn.addEventListener('click', closeIntegrationModal);
+    
+    // Close modal if clicked outside
+    window.addEventListener('click', function(e) {
+        if (e.target === integrationModal) {
+            closeIntegrationModal();
+        }
+    });
+    
+    // OAuth connect button - direct connection without filling anything
+    oauthConnectBtn.addEventListener('click', function() {
+        // Show loading state
+        integrationAuthForm.style.display = 'none';
+        integrationLoading.style.display = 'block';
+        
+        // Simulate OAuth process
+        simulateOAuth(currentSource);
+    });
+    
+    // Connect button in modal (used after selecting files)
+    integrationConnectBtn.addEventListener('click', function() {
+        if (integrationSourceSelect.style.display !== 'none') {
+            // Source selection is visible, handle selected files
+            const selectedFiles = getSelectedFilesFromTree();
+            
+            if (selectedFiles.length === 0) {
+                alert('Please select at least one file to import');
+                return;
+            }
+            
+            // Add connected source to the list
+            addConnectedSource(currentSource, selectedFiles);
+            
+            // Close modal
+            closeIntegrationModal();
+            
+            // Enable analyze button
             analyzeBtn.disabled = false;
         }
     });
     
-    // Remove File Button
-    removeFileBtn.addEventListener('click', function() {
-        fileInput.value = '';
-        uploadedFile = null;
-        fileLabel.style.display = 'block';
-        fileInfo.style.display = 'none';
-        analyzeBtn.disabled = true;
-    });
+    // Function to open integration modal
+    function openIntegrationModal(source) {
+        currentSource = source;
+        
+        // Set source name
+        sourceName.textContent = getSourceDisplayName(source);
+        
+        // Reset modal state
+        integrationLoading.style.display = 'none';
+        integrationAuthForm.style.display = 'block';
+        integrationSourceSelect.style.display = 'none';
+        sourceTree.innerHTML = '';
+        
+        // Show modal
+        integrationModal.style.display = 'block';
+    }
     
-    // Form Submission - Combined upload and analyze
-    uploadForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (!uploadedFile) {
-            alert('Please select a file to upload');
-            return;
-        }
-        
-        const companyId = companyIdInput.value.trim();
-        if (!companyId) {
-            alert('Please enter a Company ID');
-            companyIdInput.focus();
-            return;
-        }
-        
-        // Save company ID to localStorage for next time
-        localStorage.setItem('companyId', companyId);
-        
-        // Show status section
-        statusSection.style.display = 'block';
-        
-        // Reset progress
-        resetProgress();
-        
-        // Get custom query if provided
-        const query = queryTextInput.value.trim() || 
-                      "What are the key issues and actionable insights from this feedback?";
-        
-        // Create form data with all required parameters
-        const formData = new FormData();
-        formData.append('file', uploadedFile);
-        formData.append('company_id', companyId);
-        formData.append('query', query);
-        formData.append('save_analysis', saveAnalysisCheck.checked);
-        
-        // Send file to server using the single combined endpoint
-        addStatusMessage('Uploading and analyzing file...', 'system');
-        analyzeBtn.disabled = true;
-        
-        fetch('/api/analyze', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
+    // Function to close integration modal
+    function closeIntegrationModal() {
+        integrationModal.style.display = 'none';
+        currentSource = null;
+    }
+    
+    // Function to show more integrations
+    function showMoreIntegrations() {
+        alert('More integrations coming soon!');
+    }
+    
+    // Function to simulate OAuth authentication
+    function simulateOAuth(source) {
+        // Simulate API delay
+        setTimeout(() => {
+            // Show source selection view
+            integrationLoading.style.display = 'none';
+            integrationSourceSelect.style.display = 'block';
             
-            // Store results
-            analysisResults = data;
-            
-            // Update progress to 100%
-            Object.keys(progressSteps).forEach(step => {
-                progressSteps[step].completed = true;
+            // Populate file tree
+            populateSourceTree(source);
+        }, 1500);
+    }
+    
+    // Function to populate the source tree
+    function populateSourceTree(source) {
+        // Clear existing tree
+        sourceTree.innerHTML = '';
+        
+        // Make API call to get source structure
+        fetch(`/api/integrations/files?source=${source}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderTree(data.files, sourceTree);
+                } else {
+                    sourceTree.innerHTML = `<div class="error-message">${data.error || 'Failed to load files'}</div>`;
+                }
+            })
+            .catch(error => {
+                sourceTree.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
             });
-            updateProgressBar();
-            
-            // Display results
-            displayResults(data);
-            
-            // Show saved notification if saved
-            if (data.saved && data.ticket_id) {
-                savedNotification.style.display = 'block';
-                savedText.textContent = `Analysis saved as Ticket #${data.ticket_id}`;
-                viewDashboardLink.href = `/dashboard/${companyId}`;
+    }
+    
+    // Function to render tree view
+    function renderTree(data, container) {
+        data.forEach(item => {
+            if (item.type === 'folder') {
+                // Create folder item
+                const folderDiv = document.createElement('div');
+                folderDiv.className = 'tree-item tree-folder';
+                folderDiv.textContent = item.name;
+                
+                // Create folder content container
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'tree-folder-content';
+                
+                // Add click event to toggle folder
+                folderDiv.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    this.classList.toggle('open');
+                });
+                
+                // Recursively render children
+                renderTree(item.children, contentDiv);
+                
+                container.appendChild(folderDiv);
+                container.appendChild(contentDiv);
             } else {
-                savedNotification.style.display = 'none';
+                // Create file item with checkbox
+                const fileDiv = document.createElement('div');
+                fileDiv.className = 'tree-item tree-file';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = item.name;
+                
+                const label = document.createElement('label');
+                label.textContent = item.name;
+                
+                fileDiv.appendChild(checkbox);
+                fileDiv.appendChild(label);
+                container.appendChild(fileDiv);
             }
+        });
+    }
+    
+    // Function to get selected files from tree
+    function getSelectedFilesFromTree() {
+        const checkboxes = sourceTree.querySelectorAll('input[type="checkbox"]:checked');
+        return Array.from(checkboxes).map(checkbox => checkbox.value);
+    }
+    
+    // Function to add connected source to the UI
+    function addConnectedSource(source, files) {
+        // Store source data
+        connectedSourcesList[source] = {
+            files: files,
+            timestamp: new Date().getTime()
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('connectedSources', JSON.stringify(connectedSourcesList));
+        
+        // Update UI
+        updateConnectedSourcesUI();
+    }
+    
+    // Function to update connected sources UI
+    function updateConnectedSourcesUI() {
+        // Clear container
+        connectedSources.innerHTML = '';
+        
+        // Add each source
+        for (const source in connectedSourcesList) {
+            const sourceData = connectedSourcesList[source];
+            const fileCount = sourceData.files.length;
+            
+            const sourceDiv = document.createElement('div');
+            sourceDiv.className = 'connected-source';
+            
+            // Add icon based on source
+            const icon = document.createElement('i');
+            icon.className = getSourceIconClass(source);
+            sourceDiv.appendChild(icon);
+            
+            // Add source name and file count
+            const label = document.createElement('span');
+            label.textContent = `${getSourceDisplayName(source)} (${fileCount} files)`;
+            sourceDiv.appendChild(label);
+            
+            // Add remove button
+            const removeBtn = document.createElement('span');
+            removeBtn.className = 'remove-source';
+            removeBtn.innerHTML = '<i class="fas fa-times-circle"></i>';
+            removeBtn.setAttribute('data-source', source);
+            removeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                removeConnectedSource(source);
+            });
+            sourceDiv.appendChild(removeBtn);
+            
+            connectedSources.appendChild(sourceDiv);
+        }
+        
+        // Show or hide the container based on if we have sources
+        if (Object.keys(connectedSourcesList).length > 0) {
+            connectedSources.style.display = 'flex';
+            // Enable analyze button
             analyzeBtn.disabled = false;
-        })
-        .catch(error => {
-            addStatusMessage(`Error: ${error.message}`, 'error');
-            analyzeBtn.disabled = false;
-        });
-    });
-    
-    // Progress Bar Handling
-    function resetProgress() {
-        Object.keys(progressSteps).forEach(step => {
-            progressSteps[step].completed = false;
-        });
-        updateProgressBar();
-    }
-    
-    function updateProgress(message) {
-        // Update progress based on message
-        if (message.includes('Processing file') || message.includes('File processed')) {
-            progressSteps.upload.completed = true;
-        } else if (message.includes('Scout') || message.includes('scout')) {
-            progressSteps.scout.completed = true;
-        } else if (message.includes('Analyst') || message.includes('analyst')) {
-            progressSteps.analyst.completed = true;
-        }
-        
-        updateProgressBar();
-    }
-    
-    function updateProgressBar() {
-        let totalWeight = 0;
-        let completedWeight = 0;
-        
-        Object.values(progressSteps).forEach(step => {
-            totalWeight += step.weight;
-            if (step.completed) {
-                completedWeight += step.weight;
+        } else {
+            connectedSources.style.display = 'none';
+            // Only disable analyze button if no file is selected
+            if (!document.getElementById('file-info').style.display || 
+                document.getElementById('file-info').style.display === 'none') {
+                analyzeBtn.disabled = true;
             }
-        });
-        
-        const percentage = Math.round((completedWeight / totalWeight) * 100);
-        progressBar.style.width = `${percentage}%`;
-    }
-    
-    // Status Message Handling
-    function addStatusMessage(message, type = 'info') {
-        const messageElement = document.createElement('div');
-        messageElement.className = `message ${type}`;
-        messageElement.textContent = message;
-        
-        statusMessages.appendChild(messageElement);
-        statusMessages.scrollTop = statusMessages.scrollHeight;
-    }
-    
-    // Display Results
-    function displayResults(data) {
-        // Show results section
-        resultsSection.style.display = 'block';
-        
-        // Check if we have the final report
-        if (!data.final_report) {
-            addStatusMessage('Error: No final report data', 'error');
-            return;
-        }
-        
-        const report = data.final_report;
-        
-        // Executive Summary
-        summaryContent.textContent = report.executive_summary || 'No summary available';
-        
-        // Issues List
-        renderIssues(report.issues || []);
-        
-        // Implementation Plan
-        renderImplementationPlan(report.implementation_plan || {});
-        
-        // Scroll to results
-        resultsSection.scrollIntoView({ behavior: 'smooth' });
-    }
-    
-    // Render Issues
-    function renderIssues(issues) {
-        // Clear existing issues
-        issuesList.innerHTML = '';
-        
-        // Filter issues based on active tab
-        const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
-        let filteredIssues = issues;
-        
-        if (activeTab !== 'all') {
-            filteredIssues = issues.filter(issue => 
-                issue.criticality && issue.criticality.toLowerCase() === activeTab.toLowerCase()
-            );
-        }
-        
-        // If no issues match the filter
-        if (filteredIssues.length === 0) {
-            const noIssues = document.createElement('div');
-            noIssues.className = 'no-issues';
-            noIssues.textContent = `No ${activeTab} priority issues found`;
-            issuesList.appendChild(noIssues);
-            return;
-        }
-        
-        // Create issue cards
-        filteredIssues.forEach(issue => {
-            const issueCard = document.createElement('div');
-            issueCard.className = 'issue-card';
-            
-            // Determine badge class based on criticality
-            const badgeClass = `badge-${issue.criticality ? issue.criticality.toLowerCase() : 'medium'}`;
-            
-            // Build source list HTML if sources exist
-            let sourcesHtml = '';
-            if (issue.sources && issue.sources.length > 0) {
-                sourcesHtml = `
-                    <h5>User Reports:</h5>
-                    <ul class="sources-list">
-                        ${issue.sources.map(source => `<li>${source}</li>`).join('')}
-                    </ul>
-                `;
-            }
-            
-            // Build tags HTML if tags exist
-            let tagsHtml = '';
-            if (issue.tags && issue.tags.length > 0) {
-                tagsHtml = `
-                    <div class="issue-tags">
-                        ${issue.tags.map(tag => `<span class="issue-tag">${tag}</span>`).join('')}
-                    </div>
-                `;
-            }
-            
-            issueCard.innerHTML = `
-                <div class="issue-header">
-                    <h4 class="issue-title">${issue.issue_type || 'Untitled Issue'}</h4>
-                    <span class="issue-badge ${badgeClass}">${issue.criticality || 'Medium'}</span>
-                </div>
-                <div class="issue-body">
-                    <p class="issue-description">${issue.description || 'No description available'}</p>
-                    <p class="issue-team"><strong>Team:</strong> ${issue.responsible_team || 'Unassigned'}</p>
-                    ${tagsHtml}
-                    ${sourcesHtml}
-                    <h5>Recommended Actions:</h5>
-                    <ul class="actions-list">
-                        ${(issue.recommended_actions || []).map(action => `<li>${action}</li>`).join('')}
-                    </ul>
-                    
-                    <p><strong>Resolution Strategy:</strong> ${issue.resolution_strategy || 'Not specified'}</p>
-                    <p><strong>Timeline:</strong> ${issue.timeline || 'Not specified'}</p>
-                </div>
-            `;
-            
-            issuesList.appendChild(issueCard);
-        });
-    }
-    
-    // Render Implementation Plan
-    function renderImplementationPlan(plan) {
-        // Clear existing plan
-        timelineContainer.innerHTML = '';
-        
-        // Immediate Actions
-        if (plan.immediate_actions && plan.immediate_actions.length > 0) {
-            const immediateSection = document.createElement('div');
-            immediateSection.className = 'timeline-section';
-            immediateSection.innerHTML = `
-                <h4><i class="fas fa-bolt"></i> Immediate Actions</h4>
-                <ul class="timeline-items">
-                    ${plan.immediate_actions.map(action => `<li>${action}</li>`).join('')}
-                </ul>
-            `;
-            timelineContainer.appendChild(immediateSection);
-        }
-        
-        // Short Term Actions
-        if (plan.short_term_actions && plan.short_term_actions.length > 0) {
-            const shortTermSection = document.createElement('div');
-            shortTermSection.className = 'timeline-section';
-            shortTermSection.innerHTML = `
-                <h4><i class="fas fa-calendar-alt"></i> Short Term Actions (1-4 weeks)</h4>
-                <ul class="timeline-items">
-                    ${plan.short_term_actions.map(action => `<li>${action}</li>`).join('')}
-                </ul>
-            `;
-            timelineContainer.appendChild(shortTermSection);
-        }
-        
-        // Long Term Actions
-        if (plan.long_term_actions && plan.long_term_actions.length > 0) {
-            const longTermSection = document.createElement('div');
-            longTermSection.className = 'timeline-section';
-            longTermSection.innerHTML = `
-                <h4><i class="fas fa-calendar-check"></i> Long Term Actions (1-3 months)</h4>
-                <ul class="timeline-items">
-                    ${plan.long_term_actions.map(action => `<li>${action}</li>`).join('')}
-                </ul>
-            `;
-            timelineContainer.appendChild(longTermSection);
-        }
-        
-        // If no timeline data
-        if (timelineContainer.children.length === 0) {
-            timelineContainer.innerHTML = '<p>No implementation plan available</p>';
         }
     }
     
-    // Tab Switching
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Update active tab
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Re-render issues with the new filter
-            if (analysisResults && analysisResults.final_report && analysisResults.final_report.issues) {
-                renderIssues(analysisResults.final_report.issues);
-            }
-        });
-    });
-    
-    // Download JSON Button
-    downloadJsonBtn.addEventListener('click', function() {
-        if (!analysisResults) return;
-        
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(analysisResults, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", "feedback-analysis.json");
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-    });
-    
-    // New Analysis Button
-    newAnalysisBtn.addEventListener('click', function() {
-        // Reset all inputs and state
-        fileInput.value = '';
-        fileLabel.style.display = 'block';
-        fileInfo.style.display = 'none';
-        queryTextInput.value = '';
-        saveAnalysisCheck.checked = true;
-        uploadedFile = null;
-        analysisResults = null;
-        analyzeBtn.disabled = true;
-        
-        // Hide results and status sections
-        resultsSection.style.display = 'none';
-        statusSection.style.display = 'none';
-        savedNotification.style.display = 'none';
-        
-        // Clear status messages
-        statusMessages.innerHTML = '<div class="message system">Ready to process your feedback</div>';
-        
-        // Reset progress
-        resetProgress();
-        
-        // Scroll to top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    
-    // Drag and Drop Functionality for File Upload
-    const fileUploadArea = document.querySelector('.file-upload');
-    
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        fileUploadArea.addEventListener(eventName, preventDefaults, false);
-    });
-    
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
+    // Function to remove connected source
+    function removeConnectedSource(source) {
+        delete connectedSourcesList[source];
+        localStorage.setItem('connectedSources', JSON.stringify(connectedSourcesList));
+        updateConnectedSourcesUI();
     }
     
-    ['dragenter', 'dragover'].forEach(eventName => {
-        fileUploadArea.addEventListener(eventName, highlight, false);
-    });
-    
-    ['dragleave', 'drop'].forEach(eventName => {
-        fileUploadArea.addEventListener(eventName, unhighlight, false);
-    });
-    
-    function highlight() {
-        fileUploadArea.classList.add('highlighted');
-    }
-    
-    function unhighlight() {
-        fileUploadArea.classList.remove('highlighted');
-    }
-    
-    fileUploadArea.addEventListener('drop', handleDrop, false);
-    
-    function handleDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        
-        if (files.length > 0) {
-            fileInput.files = files;
-            // Trigger change event
-            const event = new Event('change');
-            fileInput.dispatchEvent(event);
+    // Function to get source display name
+    function getSourceDisplayName(source) {
+        switch(source) {
+            case 'gdrive': return 'Google Drive';
+            case 'slack': return 'Slack';
+            case 'teams': return 'Microsoft Teams';
+            case 'skype': return 'Skype';
+            case 'jira': return 'Jira';
+            case 'dropbox': return 'Dropbox';
+            default: return source.charAt(0).toUpperCase() + source.slice(1);
         }
     }
+    
+    // Function to get source icon class
+    function getSourceIconClass(source) {
+        switch(source) {
+            case 'gdrive': return 'fab fa-google-drive';
+            case 'slack': return 'fab fa-slack';
+            case 'teams': return 'fab fa-microsoft';
+            case 'skype': return 'fab fa-skype';
+            case 'jira': return 'fab fa-jira';
+            case 'dropbox': return 'fab fa-dropbox';
+            default: return 'fas fa-external-link-alt';
+        }
+    }
+    
+    // Function to save connection
+    function saveConnection(source) {
+        // Store basic connection info
+        const connections = JSON.parse(localStorage.getItem('savedConnections') || '{}');
+        connections[source] = {
+            lastConnected: new Date().toISOString()
+        };
+        localStorage.setItem('savedConnections', JSON.stringify(connections));
+    }
+    
+    // Function to load saved connections
+    function loadSavedConnections() {
+        // Load connected sources
+        const sources = JSON.parse(localStorage.getItem('connectedSources') || '{}');
+        connectedSourcesList = sources;
+        updateConnectedSourcesUI();
+    }
+    
+    // Expose the integration handler to the main script
+    window.integrationHandler = {
+        getConnectedSources: function() {
+            return connectedSourcesList;
+        },
+        hasConnectedSources: function() {
+            return Object.keys(connectedSourcesList).length > 0;
+        }
+    };
 });
