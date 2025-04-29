@@ -103,6 +103,7 @@ def dashboard(company_id):
 @app.route('/api/analyze', methods=['POST'])
 def upload_and_analyze():
     """Combined endpoint to upload and analyze file in a single operation"""
+    # NEED "file", "company_id" and "query" as params
     # Check if file exists in request
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400

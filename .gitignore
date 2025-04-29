@@ -1,4 +1,5 @@
 .env
 /process_data
 __pycache__
-data/companies
+data/companies 
+.vscode
