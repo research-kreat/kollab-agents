@@ -1,40 +1,7 @@
-# ORCHESTRATOR AGENTS FILE
-from flask import Flask, request, jsonify, render_template, redirect, url_for
-from flask_socketio import SocketIO
-from werkzeug.utils import secure_filename
-import tempfile, os, logging
+from flask import jsonify
 
-# Custom modules
-from agents.scout_agent import ScoutAgent
-from agents.analyst_agent import AnalystAgent
-from utils.file_processor import process_file
-from utils.storage import StorageManager
-
-# =============================
-# App Initialization
-# =============================
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'kollab_secret_key')
-app.config['UPLOAD_FOLDER'] = tempfile.mkdtemp()
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-# =============================
-# Logging Configuration
-# =============================
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-
-# =============================
-# Agent & Storage Initialization
-# =============================
-storage = StorageManager()
-scout = ScoutAgent(socket_instance=socketio)
-analyst = AnalystAgent(socket_instance=socketio)
-
-
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Import the centralized app configuration
+from utils.app_config import socketio, logger, storage, scout, analyst
 
 def process_with_agents(content, query, process_id, company_id, save_analysis):
     """
