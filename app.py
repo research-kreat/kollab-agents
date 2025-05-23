@@ -101,7 +101,7 @@ def dashboard(company_id):
 # API Endpoints
 # =============================
 @app.route('/api/analyze', methods=['POST'])
-def upload_and_analyze():
+def analyze():
     """Combined endpoint to upload and analyze file in a single operation"""
     # NEED "file", "company_id" and "query" as params
     # Check if file exists in request
@@ -374,4 +374,4 @@ def page_not_found(error):
 # =============================
 if __name__ == '__main__':
     logger.info("Starting Kollab server...")
-    socketio.run(app, debug=True, host='0.0.0.0', allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True, host='0.0.0.0', allow_unsafe_werkzeug=True, port=5002)
