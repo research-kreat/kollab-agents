@@ -1,205 +1,204 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kollab - Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
-<body>
-    <div class="container dashboard-container">
-        <header class="dashboard-header">
-            <div class="logo">
-                <h1>Kollab</h1>
-            </div>
-            <div class="company-info">
-                <h2>{{ company_name }}</h2>
-                <p>Feedback Analysis Dashboard</p>
-            </div>
-            <div class="header-actions">
-                <a href="/" class="nav-link">
-                    <i class="fas fa-plus"></i> New Analysis
-                </a>
-            </div>
-        </header>
+{% extends "base.html" %}
 
-        <div class="dashboard-stats">
-            <div class="stat-card">
-                <i class="fas fa-ticket-alt"></i>
-                <div class="stat-info">
-                    <span class="stat-value">{{ analyses|length }}</span>
-                    <span class="stat-label">Total Analysis Tickets</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-exclamation-circle"></i>
-                <div class="stat-info">
-                    <span class="stat-value">{{ status_counts.get('new', 0) }}</span>
-                    <span class="stat-label">New Issues</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-spinner"></i>
-                <div class="stat-info">
-                    <span class="stat-value">{{ status_counts.get('processing', 0) }}</span>
-                    <span class="stat-label">In Progress</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-check-circle"></i>
-                <div class="stat-info">
-                    <span class="stat-value">{{ status_counts.get('resolved', 0) }}</span>
-                    <span class="stat-label">Resolved</span>
-                </div>
+{% block title %}Kollab - Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="logo">
+        <h1>Kollab</h1>
+    </div>
+    <div class="company-info">
+        <h2>{{ company_name }}</h2>
+        <p>Feedback Analysis Dashboard</p>
+    </div>
+    <div class="header-actions">
+        <a href="/" class="nav-link">
+            <i class="fas fa-plus"></i> New Analysis
+        </a>
+    </div>
+</div>
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <i class="fas fa-ticket-alt"></i>
+        <div class="stat-info">
+            <span class="stat-value">{{ analyses|length }}</span>
+            <span class="stat-label">Total Analysis Tickets</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-exclamation-circle"></i>
+        <div class="stat-info">
+            <span class="stat-value">{{ status_counts.get('new', 0) }}</span>
+            <span class="stat-label">New Issues</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-spinner"></i>
+        <div class="stat-info">
+            <span class="stat-value">{{ status_counts.get('processing', 0) }}</span>
+            <span class="stat-label">In Progress</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-check-circle"></i>
+        <div class="stat-info">
+            <span class="stat-value">{{ status_counts.get('resolved', 0) }}</span>
+            <span class="stat-label">Resolved</span>
+        </div>
+    </div>
+</div>
+
+<main class="dashboard-main">
+    <section class="analyses-section">
+        <div class="section-header">
+            <h2>Analysis Tickets</h2>
+            <div class="filter-controls">
+                <select id="status-filter" class="filter-select">
+                    <option value="all">All Statuses</option>
+                    <option value="new">New</option>
+                    <option value="processing">Processing</option>
+                    <option value="resolved">Resolved</option>
+                </select>
+                <input type="text" id="search-input" class="search-input" placeholder="Search tickets...">
             </div>
         </div>
+        
+        <div class="tickets-container">
+            {% if analyses %}
+                {% for analysis in analyses %}
+                <div class="ticket-card" data-status="{{ analysis.status }}" data-ticket-id="{{ analysis.ticket_id }}">
+                    <div class="ticket-header">
+                        <span class="ticket-id">Ticket #{{ analysis.ticket_id[:8] }}</span>
+                        <span class="ticket-status status-{{ analysis.status }}">{{ analysis.status|capitalize }}</span>
+                    </div>
+                    <div class="ticket-body">
+                        <h4 class="ticket-title">{{ analysis.query }}</h4>
+                        <p class="ticket-summary">{{ analysis.summary|truncate(150) }}</p>
+                        <div class="ticket-meta">
+                            <span class="ticket-date">{{ analysis.created_at|timestamp_to_date }}</span>
+                            <span class="ticket-issues">{{ analysis.issue_count }} issues</span>
+                            {% if analysis.task_status_counts %}
+                            <span class="ticket-task-status">
+                                <span class="task-count new">{{ analysis.task_status_counts.new }}</span>
+                                <span class="task-count processing">{{ analysis.task_status_counts.processing }}</span>
+                                <span class="task-count resolved">{{ analysis.task_status_counts.resolved }}</span>
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="ticket-actions">
+                        <button class="action-btn spread-tasks-btn" data-ticket-id="{{ analysis.ticket_id }}">
+                            <i class="fas fa-tasks"></i> Manage Tasks
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-tickets">
+                    <i class="fas fa-search"></i>
+                    <p>No analysis tickets found</p>
+                    <a href="/" class="primary-button">Create your first analysis</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+    
+    <!-- Task Details Section - Initially Hidden -->
+    <section id="task-details-section" class="task-details-section" style="display: none;">
+        <div class="section-header">
+            <h2 id="task-detail-title">Task Details</h2>
+            <button id="close-task-details" class="secondary-button">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+        
+        <div class="executive-summary">
+            <h3>Executive Summary</h3>
+            <p id="task-summary"></p>
+        </div>
+        
+        <!-- Task Status Summary Section -->
+        <div class="task-status-summary">
+            <div class="task-status-count new">
+                <span class="count" id="task-count-new">0</span>
+                <span class="label">New</span>
+            </div>
+            <div class="task-status-count processing">
+                <span class="count" id="task-count-processing">0</span>
+                <span class="label">Processing</span>
+            </div>
+            <div class="task-status-count resolved">
+                <span class="count" id="task-count-resolved">0</span>
+                <span class="label">Resolved</span>
+            </div>
+        </div>
+        
+        <div class="task-container">
+            <h3>All Tasks</h3>
+            <div id="task-list" class="task-list"></div>
+        </div>
+        
+        <div class="implementation-plan">
+            <h3>Implementation Plan</h3>
+            <div id="task-timeline" class="timeline-container"></div>
+        </div>
+        
+        <div class="initiatives-container">
+            <h3>Cross-Team Initiatives</h3>
+            <div id="initiatives-list" class="initiatives-list"></div>
+        </div>
+    </section>
+</main>
+{% endblock %}
 
-        <main class="dashboard-main">
-            <section class="analyses-section">
-                <div class="section-header">
-                    <h2>Analysis Tickets</h2>
-                    <div class="filter-controls">
-                        <select id="status-filter" class="filter-select">
-                            <option value="all">All Statuses</option>
-                            <option value="new">New</option>
-                            <option value="processing">Processing</option>
-                            <option value="resolved">Resolved</option>
-                        </select>
-                        <input type="text" id="search-input" class="search-input" placeholder="Search tickets...">
-                    </div>
-                </div>
-                
-                <div class="tickets-container">
-                    {% if analyses %}
-                        {% for analysis in analyses %}
-                        <div class="ticket-card" data-status="{{ analysis.status }}" data-ticket-id="{{ analysis.ticket_id }}">
-                            <div class="ticket-header">
-                                <span class="ticket-id">Ticket #{{ analysis.ticket_id[:8] }}</span>
-                                <span class="ticket-status status-{{ analysis.status }}">{{ analysis.status|capitalize }}</span>
-                            </div>
-                            <div class="ticket-body">
-                                <h4 class="ticket-title">{{ analysis.query }}</h4>
-                                <p class="ticket-summary">{{ analysis.summary|truncate(150) }}</p>
-                                <div class="ticket-meta">
-                                    <span class="ticket-date">{{ analysis.created_at|timestamp_to_date }}</span>
-                                    <span class="ticket-issues">{{ analysis.issue_count }} issues</span>
-                                    {% if analysis.task_status_counts %}
-                                    <span class="ticket-task-status">
-                                        <span class="task-count new">{{ analysis.task_status_counts.new }}</span>
-                                        <span class="task-count processing">{{ analysis.task_status_counts.processing }}</span>
-                                        <span class="task-count resolved">{{ analysis.task_status_counts.resolved }}</span>
-                                    </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="ticket-actions">
-                                <button class="action-btn spread-tasks-btn" data-ticket-id="{{ analysis.ticket_id }}">
-                                    <i class="fas fa-tasks"></i> Manage Tasks
-                                </button>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="no-tickets">
-                            <i class="fas fa-search"></i>
-                            <p>No analysis tickets found</p>
-                            <a href="/" class="primary-button">Create your first analysis</a>
-                        </div>
-                    {% endif %}
-                </div>
-            </section>
+{% block modals %}
+<!-- Analysis Details Modal -->
+<div id="analysis-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Analysis Details</h3>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="modal-loading" class="modal-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading analysis details...</p>
+            </div>
             
-            <!-- Task Details Section - Initially Hidden -->
-            <section id="task-details-section" class="task-details-section" style="display: none;">
-                <div class="section-header">
-                    <h2 id="task-detail-title">Task Details</h2>
-                    <button id="close-task-details" class="secondary-button">
-                        <i class="fas fa-times"></i> Close
-                    </button>
-                </div>
-                
+            <div id="modal-content" style="display: none;">
                 <div class="executive-summary">
-                    <h3>Executive Summary</h3>
-                    <p id="task-summary"></p>
+                    <h4>Executive Summary</h4>
+                    <p id="modal-summary"></p>
                 </div>
                 
-                <!-- Task Status Summary Section -->
-                <div class="task-status-summary">
-                    <div class="task-status-count new">
-                        <span class="count" id="task-count-new">0</span>
-                        <span class="label">New</span>
-                    </div>
-                    <div class="task-status-count processing">
-                        <span class="count" id="task-count-processing">0</span>
-                        <span class="label">Processing</span>
-                    </div>
-                    <div class="task-status-count resolved">
-                        <span class="count" id="task-count-resolved">0</span>
-                        <span class="label">Resolved</span>
-                    </div>
-                </div>
-                
-                <div class="task-container">
-                    <h3>All Tasks</h3>
-                    <div id="task-list" class="task-list"></div>
+                <div class="issues-container">
+                    <h4>Issues & Actions</h4>
+                    <div id="modal-issues-list" class="issues-list modal-issues-list"></div>
                 </div>
                 
                 <div class="implementation-plan">
-                    <h3>Implementation Plan</h3>
-                    <div id="task-timeline" class="timeline-container"></div>
-                </div>
-                
-                <div class="initiatives-container">
-                    <h3>Cross-Team Initiatives</h3>
-                    <div id="initiatives-list" class="initiatives-list"></div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Analysis Details Modal -->
-        <div id="analysis-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 id="modal-title">Analysis Details</h3>
-                    <span class="close-modal">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <div id="modal-loading" class="modal-loading">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <p>Loading analysis details...</p>
-                    </div>
-                    
-                    <div id="modal-content" style="display: none;">
-                        <div class="executive-summary">
-                            <h4>Executive Summary</h4>
-                            <p id="modal-summary"></p>
-                        </div>
-                        
-                        <div class="issues-container">
-                            <h4>Issues & Actions</h4>
-                            <div id="modal-issues-list" class="issues-list modal-issues-list"></div>
-                        </div>
-                        
-                        <div class="implementation-plan">
-                            <h4>Implementation Plan</h4>
-                            <div id="modal-timeline" class="timeline-container"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button id="modal-download-btn" class="secondary-button">
-                        <i class="fas fa-download"></i> Download JSON
-                    </button>
-                    <button id="modal-close-btn" class="primary-button">
-                        <i class="fas fa-times"></i> Close
-                    </button>
+                    <h4>Implementation Plan</h4>
+                    <div id="modal-timeline" class="timeline-container"></div>
                 </div>
             </div>
         </div>
+        <div class="modal-footer">
+            <button id="modal-download-btn" class="secondary-button">
+                <i class="fas fa-download"></i> Download JSON
+            </button>
+            <button id="modal-close-btn" class="primary-button">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
     </div>
+</div>
+{% endblock %}
 
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-</body>
-</html>
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,22 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // DOM Elements
+    // DOM Elements - Dashboard
+    const ticketCards = document.querySelectorAll('.ticket-card');
     const statusFilter = document.getElementById('status-filter');
     const searchInput = document.getElementById('search-input');
-    const ticketCards = document.querySelectorAll('.ticket-card');
-    const spreadTasksButtons = document.querySelectorAll('.spread-tasks-btn');
-    const statusOptions = document.querySelectorAll('.status-option');
-    const analysisModal = document.getElementById('analysis-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalLoading = document.getElementById('modal-loading');
-    const modalContent = document.getElementById('modal-content');
-    const modalSummary = document.getElementById('modal-summary');
-    const modalIssuesList = document.getElementById('modal-issues-list');
-    const modalTimeline = document.getElementById('modal-timeline');
-    const modalDownloadBtn = document.getElementById('modal-download-btn');
-    const modalCloseBtn = document.getElementById('modal-close-btn');
-    const closeModalBtn = document.querySelector('.close-modal');
+    const ticketsContainer = document.querySelector('.tickets-container');
     
-    // Task Details Elements
+    // DOM Elements - Task Details Section
     const taskDetailsSection = document.getElementById('task-details-section');
     const taskDetailTitle = document.getElementById('task-detail-title');
     const taskSummary = document.getElementById('task-summary');
@@ -24,548 +13,220 @@ document.addEventListener('DOMContentLoaded', function() {
     const taskTimeline = document.getElementById('task-timeline');
     const initiativesList = document.getElementById('initiatives-list');
     const closeTaskDetailsBtn = document.getElementById('close-task-details');
+    const taskCountNew = document.getElementById('task-count-new');
+    const taskCountProcessing = document.getElementById('task-count-processing');
+    const taskCountResolved = document.getElementById('task-count-resolved');
     
-    // Current company ID (from URL or default)
-    const companyId = getCompanyId();
+    // DOM Elements - Modal
+    const analysisModal = document.getElementById('analysis-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalLoading = document.getElementById('modal-loading');
+    const modalContent = document.getElementById('modal-content');
+    const modalSummary = document.getElementById('modal-summary');
+    const modalIssuesList = document.getElementById('modal-issues-list');
+    const modalTimeline = document.getElementById('modal-timeline');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalDownloadBtn = document.getElementById('modal-download-btn');
+    const closeModalBtn = document.querySelector('.close-modal');
+    
+    // Variables
+    let currentCompanyId = document.querySelector('.dashboard-header h2').textContent.trim().toLowerCase().replace(/\s+/g, '_');
     let currentTicketId = null;
     let currentAnalysisData = null;
     
-    // Spread tasks button handling
-    spreadTasksButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const ticketId = this.getAttribute('data-ticket-id');
-            loadTaskDetails(ticketId);
-        });
-    });
+    // Event Listeners
     
-    // Close task details
-    if (closeTaskDetailsBtn) {
-        closeTaskDetailsBtn.addEventListener('click', function() {
-            taskDetailsSection.style.display = 'none';
-        });
-    }
+    // Filtering and Searching
+    statusFilter.addEventListener('change', filterTickets);
+    searchInput.addEventListener('input', filterTickets);
     
-    // Filter tickets by status
-    statusFilter.addEventListener('change', function() {
-        filterTickets();
-    });
-    
-    // Search tickets
-    searchInput.addEventListener('input', function() {
-        filterTickets();
-    });
-    
-    // Close modal
-    closeModalBtn.addEventListener('click', closeAnalysisModal);
-    modalCloseBtn.addEventListener('click', closeAnalysisModal);
-    
-    // Modal download button
-    modalDownloadBtn.addEventListener('click', function() {
-        if (currentTicketId) {
-            downloadAnalysis(currentTicketId);
-        }
-    });
-    
-    // Close modal if clicked outside
-    window.addEventListener('click', function(e) {
-        if (e.target === analysisModal) {
-            closeAnalysisModal();
-        }
-    });
-    
-    // Helper function to get company ID from URL or use default
-    function getCompanyId() {
-        // Try to extract from URL path
-        const pathParts = window.location.pathname.split('/');
-        const dashboardIndex = pathParts.indexOf('dashboard');
-        
-        if (dashboardIndex !== -1 && pathParts.length > dashboardIndex + 1) {
-            return pathParts[dashboardIndex + 1];
-        }
-        
-        // Fallback to default
-        return 'default_company';
-    }
-    
-    // Filter tickets based on status and search query
+    // Apply filter to tickets based on status and search
     function filterTickets() {
         const statusValue = statusFilter.value;
-        const searchQuery = searchInput.value.toLowerCase();
+        const searchValue = searchInput.value.toLowerCase();
         
         ticketCards.forEach(card => {
-            const cardStatus = card.getAttribute('data-status');
-            const cardTitle = card.querySelector('.ticket-title').textContent.toLowerCase();
-            const cardSummary = card.querySelector('.ticket-summary').textContent.toLowerCase();
+            const status = card.dataset.status;
+            const title = card.querySelector('.ticket-title').textContent.toLowerCase();
+            const summary = card.querySelector('.ticket-summary').textContent.toLowerCase();
+            const ticketId = card.querySelector('.ticket-id').textContent.toLowerCase();
             
-            const statusMatch = statusValue === 'all' || cardStatus === statusValue;
-            const searchMatch = !searchQuery || 
-                                cardTitle.includes(searchQuery) || 
-                                cardSummary.includes(searchQuery);
+            // Check if matches both filter criteria
+            const statusMatch = statusValue === 'all' || status === statusValue;
+            const searchMatch = searchValue === '' || 
+                title.includes(searchValue) || 
+                summary.includes(searchValue) || 
+                ticketId.includes(searchValue);
             
-            if (statusMatch && searchMatch) {
-                card.style.display = 'flex';
-            } else {
-                card.style.display = 'none';
+            // Show/hide based on match
+            card.style.display = (statusMatch && searchMatch) ? 'block' : 'none';
+        });
+        
+        // Check if no results and show message
+        const visibleCards = Array.from(ticketCards).filter(card => card.style.display !== 'none');
+        if (visibleCards.length === 0) {
+            let noResultsEl = document.querySelector('.no-results');
+            if (!noResultsEl) {
+                noResultsEl = document.createElement('div');
+                noResultsEl.className = 'no-results';
+                noResultsEl.innerHTML = `
+                    <i class="fas fa-search"></i>
+                    <p>No matching tickets found</p>
+                `;
+                ticketsContainer.appendChild(noResultsEl);
             }
+            noResultsEl.style.display = 'flex';
+        } else {
+            const noResultsEl = document.querySelector('.no-results');
+            if (noResultsEl) {
+                noResultsEl.style.display = 'none';
+            }
+        }
+    }
+    
+    // Add click event to all ticket cards to show manage tasks panel
+    document.querySelectorAll('.spread-tasks-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const ticketId = this.dataset.ticketId;
+            showTaskDetails(ticketId);
+        });
+    });
+    
+    // Close task details panel
+    closeTaskDetailsBtn.addEventListener('click', function() {
+        taskDetailsSection.style.display = 'none';
+    });
+    
+    // Modal close buttons
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeModal);
+    }
+    
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', closeModal);
+    }
+    
+    // When the user clicks anywhere outside the modal, close it
+    window.addEventListener('click', function(event) {
+        if (event.target === analysisModal) {
+            closeModal();
+        }
+    });
+    
+    // Download JSON button in modal
+    if (modalDownloadBtn) {
+        modalDownloadBtn.addEventListener('click', function() {
+            if (!currentAnalysisData) return;
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentAnalysisData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `ticket-${currentTicketId}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         });
     }
     
-    // Load task details and display them
-    function loadTaskDetails(ticketId) {
-        // Store current ticket ID
+    // Functions
+    
+    // Show task details panel for a specific ticket
+    function showTaskDetails(ticketId) {
         currentTicketId = ticketId;
         
         // Show loading state
-        taskList.innerHTML = '<div class="loading-tasks"><i class="fas fa-spinner fa-spin"></i> Loading tasks...</div>';
         taskDetailsSection.style.display = 'block';
-        taskDetailTitle.textContent = `Tasks for Ticket #${ticketId.substring(0, 8)}`;
+        taskDetailTitle.textContent = `Loading Tasks for Ticket #${ticketId.substring(0, 8)}...`;
+        taskSummary.textContent = 'Loading...';
+        taskList.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading tasks...</div>';
+        taskTimeline.innerHTML = '';
+        initiativesList.innerHTML = '';
         
-        // Fetch analysis details
-        fetch(`/api/analysis/${companyId}/${ticketId}`)
+        // Reset task counters
+        taskCountNew.textContent = '0';
+        taskCountProcessing.textContent = '0';
+        taskCountResolved.textContent = '0';
+        
+        // Fetch analysis data
+        fetch(`/api/analysis/${currentCompanyId}/${ticketId}`)
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    currentAnalysisData = data.data;
-                    renderTaskDetails(data.data);
-                } else {
-                    showTaskError(data.error || 'Failed to load task details');
+                if (!data.success || !data.data) {
+                    throw new Error(data.error || 'Failed to load analysis data');
                 }
+                
+                // Store the data for later use
+                currentAnalysisData = data.data;
+                
+                // Update panel title
+                taskDetailTitle.textContent = `Tasks for Ticket #${ticketId.substring(0, 8)}`;
+                
+                // Populate task details panel
+                renderTaskDetails(data.data);
             })
             .catch(error => {
-                showTaskError('Error loading tasks: ' + error);
+                taskSummary.textContent = 'Error loading analysis';
+                taskList.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
             });
     }
     
-    // Show error in task details
-    function showTaskError(message) {
-        taskList.innerHTML = `<div class="error-message"><i class="fas fa-exclamation-triangle"></i> ${message}</div>`;
-        taskTimeline.innerHTML = '';
-        initiativesList.innerHTML = '';
-        taskSummary.textContent = 'Failed to load task details';
-    }
-    
-    // Render task details from analysis data
+    // Render task details in the task panel
     function renderTaskDetails(analysis) {
-        // Render summary
-        taskSummary.textContent = analysis.final_report?.executive_summary || 'No summary available';
-        
-        // Update task status counts
-        updateTaskStatusSummary(analysis.final_report?.issues || []);
-        
-        // Render tasks/issues
-        renderTaskList(analysis.final_report?.issues || []);
-        
-        // Render implementation plan
-        renderTaskImplementationPlan(analysis.final_report?.implementation_plan || {});
-        
-        // Render cross-team initiatives
-        renderInitiatives(analysis.final_report?.cross_team_initiatives || []);
-        
-        // Scroll to task details
-        taskDetailsSection.scrollIntoView({ behavior: 'smooth' });
-    }
-    
-    // Update task status summary counters
-    function updateTaskStatusSummary(tasks) {
-        const countNew = document.getElementById('task-count-new');
-        const countProcessing = document.getElementById('task-count-processing');
-        const countResolved = document.getElementById('task-count-resolved');
-        
-        // Reset counts
-        let newCount = 0;
-        let processingCount = 0;
-        let resolvedCount = 0;
-        
-        // Count tasks by status
-        tasks.forEach(task => {
-            const status = task.status || 'new';
-            if (status === 'new') newCount++;
-            else if (status === 'processing') processingCount++;
-            else if (status === 'resolved') resolvedCount++;
-        });
-        
-        // Update UI
-        countNew.textContent = newCount;
-        countProcessing.textContent = processingCount;
-        countResolved.textContent = resolvedCount;
-    }
-    
-    // Handle task status update
-    function updateTaskStatus(ticketId, taskIndex, newStatus) {
-        fetch('/api/task/status', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                company_id: companyId,
-                ticket_id: ticketId,
-                task_index: parseInt(taskIndex),
-                status: newStatus
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update the task status in the UI
-                const taskCard = document.querySelector(`.task-card[data-task-index="${taskIndex}"]`);
-                if (taskCard) {
-                    const statusBadge = taskCard.querySelector('.task-status-badge');
-                    if (statusBadge) {
-                        statusBadge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
-                        statusBadge.className = `task-status-badge status-${newStatus}`;
-                    }
-                }
-                
-                // If overall status changed, update it in the ticket card
-                if (data.overall_status) {
-                    const ticketCard = document.querySelector(`.ticket-card[data-ticket-id="${ticketId}"]`);
-                    if (ticketCard) {
-                        ticketCard.setAttribute('data-status', data.overall_status);
-                        const statusElement = ticketCard.querySelector('.ticket-status');
-                        if (statusElement) {
-                            statusElement.textContent = data.overall_status.charAt(0).toUpperCase() + data.overall_status.slice(1);
-                            statusElement.className = `ticket-status status-${data.overall_status}`;
-                        }
-                    }
-                }
-                
-                // Update the task status summary
-                if (currentAnalysisData && currentAnalysisData.final_report && currentAnalysisData.final_report.issues) {
-                    const issues = currentAnalysisData.final_report.issues;
-                    issues[taskIndex].status = newStatus;
-                    updateTaskStatusSummary(issues);
-                }
-            } else {
-                alert('Failed to update task status: ' + (data.error || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            alert('Error updating task status: ' + error);
-        });
-    }
-    
-    // Render task list
-    function renderTaskList(tasks) {
+        // Clear existing content
         taskList.innerHTML = '';
-        
-        if (tasks.length === 0) {
-            taskList.innerHTML = '<p>No tasks found</p>';
-            return;
-        }
-        
-        tasks.forEach((task, index) => {
-            const taskCard = document.createElement('div');
-            taskCard.className = 'task-card';
-            taskCard.setAttribute('data-task-index', index);
-            
-            // Determine badge class based on criticality
-            const badgeClass = `badge-${task.criticality ? task.criticality.toLowerCase() : 'medium'}`;
-            
-            // Get task status (default to 'new' if not set)
-            const taskStatus = task.status || 'new';
-            
-            // Build source list HTML if sources exist
-            let sourcesHtml = '';
-            if (task.sources && task.sources.length > 0) {
-                sourcesHtml = `
-                    <h5>User Reports:</h5>
-                    <ul class="sources-list">
-                        ${task.sources.map(source => `<li>${source}</li>`).join('')}
-                    </ul>
-                `;
-            }
-            
-            // Build tags HTML if tags exist
-            let tagsHtml = '';
-            if (task.tags && task.tags.length > 0) {
-                tagsHtml = `
-                    <div class="task-tags">
-                        ${task.tags.map(tag => `<span class="task-tag">${tag}</span>`).join('')}
-                    </div>
-                `;
-            }
-            
-            // Build recommended actions
-            let actionsHtml = '';
-            if (task.recommended_actions && task.recommended_actions.length > 0) {
-                actionsHtml = `
-                    <h5>Recommended Actions:</h5>
-                    <ul class="actions-list">
-                        ${task.recommended_actions.map(action => `<li>${action}</li>`).join('')}
-                    </ul>
-                `;
-            }
-            
-            // Task status dropdown
-            const statusDropdownHtml = `
-                <div class="task-status-controls">
-                    <span class="task-status-badge status-${taskStatus}">${taskStatus.charAt(0).toUpperCase() + taskStatus.slice(1)}</span>
-                    <div class="task-status-dropdown">
-                        <button class="task-status-btn"><i class="fas fa-caret-down"></i></button>
-                        <div class="task-status-dropdown-content">
-                            <a href="#" class="task-status-option" data-status="new" data-task-index="${index}">New</a>
-                            <a href="#" class="task-status-option" data-status="processing" data-task-index="${index}">Processing</a>
-                            <a href="#" class="task-status-option" data-status="resolved" data-task-index="${index}">Resolved</a>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            taskCard.innerHTML = `
-                <div class="task-header">
-                    <h4 class="task-title">${task.issue_type || 'Untitled Task'}</h4>
-                    <div class="task-header-right">
-                        <span class="task-badge ${badgeClass}">${task.criticality || 'Medium'}</span>
-                        ${statusDropdownHtml}
-                    </div>
-                </div>
-                <div class="task-body">
-                    <p class="task-description">${task.description || 'No description available'}</p>
-                    <p class="task-team"><strong>Team:</strong> ${task.responsible_team || 'Unassigned'}</p>
-                    ${tagsHtml}
-                    ${actionsHtml}
-                    ${sourcesHtml}
-                    <p><strong>Resolution Strategy:</strong> ${task.resolution_strategy || 'Not specified'}</p>
-                    <p><strong>Timeline:</strong> ${task.timeline || 'Not specified'}</p>
-                </div>
-            `;
-            
-            taskList.appendChild(taskCard);
-        });
-        
-        // Add event listeners for status dropdown buttons
-        document.querySelectorAll('.task-status-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.stopPropagation();
-                // Toggle dropdown visibility
-                const dropdown = this.nextElementSibling;
-                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-                
-                // Close all other dropdowns
-                document.querySelectorAll('.task-status-dropdown-content').forEach(dd => {
-                    if (dd !== dropdown) dd.style.display = 'none';
-                });
-            });
-        });
-        
-        // Add event listeners for status options
-        document.querySelectorAll('.task-status-option').forEach(option => {
-            option.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const taskIndex = this.getAttribute('data-task-index');
-                const newStatus = this.getAttribute('data-status');
-                
-                // Close dropdown
-                this.closest('.task-status-dropdown-content').style.display = 'none';
-                
-                // Update status
-                updateTaskStatus(currentTicketId, taskIndex, newStatus);
-            });
-        });
-        
-        // Close dropdown when clicking elsewhere
-        document.addEventListener('click', function() {
-            document.querySelectorAll('.task-status-dropdown-content').forEach(dropdown => {
-                dropdown.style.display = 'none';
-            });
-        });
-    }
-    
-    // Render task implementation plan
-    function renderTaskImplementationPlan(plan) {
         taskTimeline.innerHTML = '';
-        
-        // Immediate Actions
-        if (plan.immediate_actions && plan.immediate_actions.length > 0) {
-            const immediateSection = document.createElement('div');
-            immediateSection.className = 'timeline-section';
-            immediateSection.innerHTML = `
-                <h4><i class="fas fa-bolt"></i> Immediate Actions</h4>
-                <ul class="timeline-items">
-                    ${plan.immediate_actions.map(action => `<li>${action}</li>`).join('')}
-                </ul>
-            `;
-            taskTimeline.appendChild(immediateSection);
-        }
-        
-        // Short Term Actions
-        if (plan.short_term_actions && plan.short_term_actions.length > 0) {
-            const shortTermSection = document.createElement('div');
-            shortTermSection.className = 'timeline-section';
-            shortTermSection.innerHTML = `
-                <h4><i class="fas fa-calendar-alt"></i> Short Term Actions (1-4 weeks)</h4>
-                <ul class="timeline-items">
-                    ${plan.short_term_actions.map(action => `<li>${action}</li>`).join('')}
-                </ul>
-            `;
-            taskTimeline.appendChild(shortTermSection);
-        }
-        
-        // Long Term Actions
-        if (plan.long_term_actions && plan.long_term_actions.length > 0) {
-            const longTermSection = document.createElement('div');
-            longTermSection.className = 'timeline-section';
-            longTermSection.innerHTML = `
-                <h4><i class="fas fa-calendar-check"></i> Long Term Actions (1-3 months)</h4>
-                <ul class="timeline-items">
-                    ${plan.long_term_actions.map(action => `<li>${action}</li>`).join('')}
-                </ul>
-            `;
-            taskTimeline.appendChild(longTermSection);
-        }
-        
-        // If no timeline data
-        if (taskTimeline.children.length === 0) {
-            taskTimeline.innerHTML = '<p>No implementation plan available</p>';
-        }
-    }
-    
-    // Render cross-team initiatives
-    function renderInitiatives(initiatives) {
         initiativesList.innerHTML = '';
         
-        if (initiatives.length === 0) {
-            initiativesList.innerHTML = '<p>No cross-team initiatives found</p>';
+        // Set summary
+        if (analysis.final_report && analysis.final_report.executive_summary) {
+            taskSummary.textContent = analysis.final_report.executive_summary;
+        } else {
+            taskSummary.textContent = 'No summary available for this analysis.';
+        }
+        
+        // If there are no issues, show a message
+        if (!analysis.final_report || !analysis.final_report.issues || analysis.final_report.issues.length === 0) {
+            taskList.innerHTML = '<div class="no-tasks">No tasks found in this analysis</div>';
             return;
         }
         
-        initiatives.forEach(initiative => {
-            const initiativeCard = document.createElement('div');
-            initiativeCard.className = 'initiative-card';
+        // Get issues and add status counters
+        const issues = analysis.final_report.issues;
+        let statusCounts = {
+            'new': 0,
+            'processing': 0,
+            'resolved': 0
+        };
+        
+        // Process each issue as a task
+        issues.forEach((issue, index) => {
+            const status = issue.status || 'new';
             
-            // Build teams list
-            let teamsHtml = '';
-            if (initiative.teams_involved && initiative.teams_involved.length > 0) {
-                teamsHtml = `
-                    <p class="teams-involved"><strong>Teams Involved:</strong></p>
-                    <div class="teams-list">
-                        ${initiative.teams_involved.map(team => `<span class="team-tag">${team}</span>`).join('')}
-                    </div>
-                `;
+            // Update status counters
+            if (status in statusCounts) {
+                statusCounts[status]++;
             }
             
-            initiativeCard.innerHTML = `
-                <div class="initiative-header">
-                    <h4 class="initiative-title">${initiative.name || 'Untitled Initiative'}</h4>
-                </div>
-                <div class="initiative-body">
-                    <p class="initiative-description">${initiative.description || 'No description available'}</p>
-                    ${teamsHtml}
-                </div>
-            `;
-            
-            initiativesList.appendChild(initiativeCard);
-        });
-    }
-    
-    // Open analysis modal and load details
-    function openAnalysisModal(ticketId) {
-        // Store current ticket ID
-        currentTicketId = ticketId;
-        
-        // Reset and show modal
-        modalTitle.textContent = `Analysis #${ticketId.substring(0, 8)}`;
-        modalLoading.style.display = 'block';
-        modalContent.style.display = 'none';
-        analysisModal.style.display = 'block';
-        
-        // Fetch analysis details
-        fetch(`/api/analysis/${companyId}/${ticketId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    renderAnalysisDetails(data.data);
-                } else {
-                    showError(data.error || 'Failed to load analysis details');
-                }
-            })
-            .catch(error => {
-                showError('Error loading analysis: ' + error);
-            })
-            .finally(() => {
-                modalLoading.style.display = 'none';
-                modalContent.style.display = 'block';
-            });
-    }
-    
-    // Close the analysis modal
-    function closeAnalysisModal() {
-        analysisModal.style.display = 'none';
-        currentTicketId = null;
-    }
-    
-    // Download analysis as JSON
-    function downloadAnalysis(ticketId) {
-        fetch(`/api/analysis/${companyId}/${ticketId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data.data, null, 2));
-                    const downloadAnchor = document.createElement('a');
-                    downloadAnchor.setAttribute("href", dataStr);
-                    downloadAnchor.setAttribute("download", `analysis-${ticketId}.json`);
-                    document.body.appendChild(downloadAnchor);
-                    downloadAnchor.click();
-                    downloadAnchor.remove();
-                } else {
-                    alert('Failed to download: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                alert('Error downloading analysis: ' + error);
-            });
-    }
-    
-    // Show error in modal
-    function showError(message) {
-        modalSummary.innerHTML = `<div class="error-message"><i class="fas fa-exclamation-triangle"></i> ${message}</div>`;
-        modalIssuesList.innerHTML = '';
-        modalTimeline.innerHTML = '';
-    }
-    
-    // Render analysis details in modal
-    function renderAnalysisDetails(analysis) {
-        // Render summary
-        modalSummary.textContent = analysis.final_report?.executive_summary || 'No summary available';
-        
-        // Render issues
-        renderIssues(analysis.final_report?.issues || []);
-        
-        // Render implementation plan
-        renderImplementationPlan(analysis.final_report?.implementation_plan || {});
-    }
-    
-    // Render issues in modal
-    function renderIssues(issues) {
-        modalIssuesList.innerHTML = '';
-        
-        if (issues.length === 0) {
-            modalIssuesList.innerHTML = '<p>No issues found</p>';
-            return;
-        }
-        
-        issues.forEach((issue, index) => {
-            const issueCard = document.createElement('div');
-            issueCard.className = 'issue-card';
-            issueCard.setAttribute('data-issue-index', index);
+            // Create the task card
+            const taskCard = document.createElement('div');
+            taskCard.className = `task-card status-${status}`;
+            taskCard.dataset.taskIndex = index;
             
             // Determine badge class based on criticality
             const badgeClass = `badge-${issue.criticality ? issue.criticality.toLowerCase() : 'medium'}`;
-            
-            // Get task status (default to 'new' if not set)
-            const issueStatus = issue.status || 'new';
             
             // Build source list HTML if sources exist
             let sourcesHtml = '';
             if (issue.sources && issue.sources.length > 0) {
                 sourcesHtml = `
-                    <h5>User Reports:</h5>
-                    <ul class="sources-list">
-                        ${issue.sources.map(source => `<li>${source}</li>`).join('')}
-                    </ul>
+                    <div class="task-sources">
+                        <h5>User Reports:</h5>
+                        <ul class="sources-list">
+                            ${issue.sources.slice(0, 2).map(source => `<li>${source}</li>`).join('')}
+                            ${issue.sources.length > 2 ? `<li>+${issue.sources.length - 2} more reports</li>` : ''}
+                        </ul>
+                    </div>
                 `;
             }
             
@@ -573,49 +234,83 @@ document.addEventListener('DOMContentLoaded', function() {
             let tagsHtml = '';
             if (issue.tags && issue.tags.length > 0) {
                 tagsHtml = `
-                    <div class="issue-tags">
-                        ${issue.tags.map(tag => `<span class="issue-tag">${tag}</span>`).join('')}
+                    <div class="task-tags">
+                        ${issue.tags.map(tag => `<span class="task-tag">${tag}</span>`).join('')}
                     </div>
                 `;
             }
             
-            // Task status indicator
-            const statusIndicatorHtml = `
-                <span class="issue-status-badge status-${issueStatus}">
-                    ${issueStatus.charAt(0).toUpperCase() + issueStatus.slice(1)}
-                </span>
-            `;
-            
-            issueCard.innerHTML = `
-                <div class="issue-header">
-                    <h4 class="issue-title">${issue.issue_type || 'Untitled Issue'}</h4>
-                    <div class="issue-header-right">
-                        <span class="issue-badge ${badgeClass}">${issue.criticality || 'Medium'}</span>
-                        ${statusIndicatorHtml}
+            taskCard.innerHTML = `
+                <div class="task-header">
+                    <h4 class="task-title">${issue.issue_type || 'Untitled Task'}</h4>
+                    <div class="task-meta">
+                        <span class="task-badge ${badgeClass}">${issue.criticality || 'Medium'}</span>
+                        <span class="task-team">${issue.responsible_team || 'Unassigned'}</span>
                     </div>
                 </div>
-                <div class="issue-body">
-                    <p class="issue-description">${issue.description || 'No description available'}</p>
-                    <p class="issue-team"><strong>Team:</strong> ${issue.responsible_team || 'Unassigned'}</p>
+                <div class="task-body">
+                    <p class="task-description">${issue.description || 'No description available'}</p>
                     ${tagsHtml}
                     ${sourcesHtml}
-                    <h5>Recommended Actions:</h5>
-                    <ul class="actions-list">
-                        ${(issue.recommended_actions || []).map(action => `<li>${action}</li>`).join('')}
-                    </ul>
-                    
-                    <p><strong>Resolution Strategy:</strong> ${issue.resolution_strategy || 'Not specified'}</p>
-                    <p><strong>Timeline:</strong> ${issue.timeline || 'Not specified'}</p>
+                </div>
+                <div class="task-actions">
+                    <select class="task-status-select" data-ticket-id="${currentTicketId}" data-task-index="${index}">
+                        <option value="new" ${status === 'new' ? 'selected' : ''}>New</option>
+                        <option value="processing" ${status === 'processing' ? 'selected' : ''}>In Progress</option>
+                        <option value="resolved" ${status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                    </select>
+                    <button class="view-task-btn" data-task-index="${index}">
+                        <i class="fas fa-eye"></i> Details
+                    </button>
                 </div>
             `;
             
-            modalIssuesList.appendChild(issueCard);
+            taskList.appendChild(taskCard);
+        });
+        
+        // Update status counters
+        taskCountNew.textContent = statusCounts.new;
+        taskCountProcessing.textContent = statusCounts.processing;
+        taskCountResolved.textContent = statusCounts.resolved;
+        
+        // Add implementation timeline if available
+        if (analysis.final_report && analysis.final_report.implementation_plan) {
+            renderImplementationPlan(analysis.final_report.implementation_plan, taskTimeline);
+        } else {
+            taskTimeline.innerHTML = '<p>No implementation plan available</p>';
+        }
+        
+        // Add cross-team initiatives if available
+        if (analysis.final_report && analysis.final_report.cross_team_initiatives) {
+            renderInitiatives(analysis.final_report.cross_team_initiatives);
+        } else {
+            initiativesList.innerHTML = '<p>No cross-team initiatives identified</p>';
+        }
+        
+        // Add event listeners to status selects
+        document.querySelectorAll('.task-status-select').forEach(select => {
+            select.addEventListener('change', function() {
+                updateTaskStatus(
+                    this.dataset.ticketId,
+                    parseInt(this.dataset.taskIndex),
+                    this.value
+                );
+            });
+        });
+        
+        // Add event listeners to view details buttons
+        document.querySelectorAll('.view-task-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const taskIndex = parseInt(this.dataset.taskIndex);
+                showTaskModal(issues[taskIndex], taskIndex);
+            });
         });
     }
     
     // Render implementation plan
-    function renderImplementationPlan(plan) {
-        modalTimeline.innerHTML = '';
+    function renderImplementationPlan(plan, container) {
+        // Clear existing content
+        container.innerHTML = '';
         
         // Immediate Actions
         if (plan.immediate_actions && plan.immediate_actions.length > 0) {
@@ -627,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${plan.immediate_actions.map(action => `<li>${action}</li>`).join('')}
                 </ul>
             `;
-            modalTimeline.appendChild(immediateSection);
+            container.appendChild(immediateSection);
         }
         
         // Short Term Actions
@@ -640,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${plan.short_term_actions.map(action => `<li>${action}</li>`).join('')}
                 </ul>
             `;
-            modalTimeline.appendChild(shortTermSection);
+            container.appendChild(shortTermSection);
         }
         
         // Long Term Actions
@@ -653,12 +348,213 @@ document.addEventListener('DOMContentLoaded', function() {
                     ${plan.long_term_actions.map(action => `<li>${action}</li>`).join('')}
                 </ul>
             `;
-            modalTimeline.appendChild(longTermSection);
+            container.appendChild(longTermSection);
         }
         
         // If no timeline data
-        if (modalTimeline.children.length === 0) {
-            modalTimeline.innerHTML = '<p>No implementation plan available</p>';
+        if (container.children.length === 0) {
+            container.innerHTML = '<p>No implementation plan available</p>';
         }
+    }
+    
+    // Render initiatives
+    function renderInitiatives(initiatives) {
+        // Clear existing content
+        initiativesList.innerHTML = '';
+        
+        if (!initiatives || initiatives.length === 0) {
+            initiativesList.innerHTML = '<p>No cross-team initiatives identified</p>';
+            return;
+        }
+        
+        // Add each initiative
+        initiatives.forEach(initiative => {
+            const initiativeCard = document.createElement('div');
+            initiativeCard.className = 'initiative-card';
+            
+            // Get teams involved
+            let teamsHtml = '';
+            if (initiative.teams && initiative.teams.length > 0) {
+                teamsHtml = `
+                    <div class="initiative-teams">
+                        <h5>Teams Involved:</h5>
+                        <div class="teams-list">
+                            ${initiative.teams.map(team => `<span class="team-badge">${team}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            initiativeCard.innerHTML = `
+                <h4 class="initiative-title">${initiative.name || 'Untitled Initiative'}</h4>
+                <p class="initiative-description">${initiative.description || 'No description available'}</p>
+                ${teamsHtml}
+                <div class="initiative-timeline">
+                    <span class="initiative-timeframe">${initiative.timeframe || 'Timeline not specified'}</span>
+                    <span class="initiative-priority">Priority: ${initiative.priority || 'Medium'}</span>
+                </div>
+            `;
+            
+            initiativesList.appendChild(initiativeCard);
+        });
+    }
+    
+    // Update task status via API
+    function updateTaskStatus(ticketId, taskIndex, newStatus) {
+        // Send status update request
+        fetch('/api/task/status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                company_id: currentCompanyId,
+                ticket_id: ticketId,
+                task_index: taskIndex,
+                status: newStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to update task status');
+            }
+            
+            // Update the UI to reflect the change
+            const taskCard = document.querySelector(`.task-card[data-task-index="${taskIndex}"]`);
+            if (taskCard) {
+                // Remove old status class and add new one
+                taskCard.className = taskCard.className.replace(/status-\w+/, `status-${newStatus}`);
+            }
+            
+            // Update the status counts
+            if (data.counts) {
+                taskCountNew.textContent = data.counts.new || 0;
+                taskCountProcessing.textContent = data.counts.processing || 0;
+                taskCountResolved.textContent = data.counts.resolved || 0;
+            }
+            
+            // Also update the main dashboard ticket status indicators if available
+            const ticketCard = document.querySelector(`.ticket-card[data-ticket-id="${ticketId}"]`);
+            if (ticketCard && data.counts) {
+                const taskCountsEl = ticketCard.querySelector('.ticket-task-status');
+                if (taskCountsEl) {
+                    const newCount = taskCountsEl.querySelector('.task-count.new');
+                    const processingCount = taskCountsEl.querySelector('.task-count.processing');
+                    const resolvedCount = taskCountsEl.querySelector('.task-count.resolved');
+                    
+                    if (newCount) newCount.textContent = data.counts.new || 0;
+                    if (processingCount) processingCount.textContent = data.counts.processing || 0;
+                    if (resolvedCount) resolvedCount.textContent = data.counts.resolved || 0;
+                }
+            }
+        })
+        .catch(error => {
+            alert(`Error updating task status: ${error.message}`);
+            // Reset the select to previous value
+            const select = document.querySelector(`.task-status-select[data-task-index="${taskIndex}"]`);
+            if (select) {
+                select.value = currentAnalysisData.final_report.issues[taskIndex].status || 'new';
+            }
+        });
+    }
+    
+    // Show task details in modal
+    function showTaskModal(task, taskIndex) {
+        if (!task) return;
+        
+        // Update modal title
+        modalTitle.textContent = `Task Details: ${task.issue_type || 'Untitled Task'}`;
+        
+        // Show loading state
+        modalLoading.style.display = 'block';
+        modalContent.style.display = 'none';
+        
+        // Show the modal
+        analysisModal.style.display = 'block';
+        
+        // Prepare the modal content
+        modalSummary.textContent = task.description || 'No description available';
+        
+        // Create detailed task view
+        const detailedTask = document.createElement('div');
+        detailedTask.className = 'detailed-task';
+        
+        // Determine badge class based on criticality
+        const badgeClass = `badge-${task.criticality ? task.criticality.toLowerCase() : 'medium'}`;
+        
+        // Build source list HTML if sources exist
+        let sourcesHtml = '';
+        if (task.sources && task.sources.length > 0) {
+            sourcesHtml = `
+                <div class="task-section">
+                    <h5>User Reports:</h5>
+                    <ul class="sources-list">
+                        ${task.sources.map(source => `<li>${source}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        // Build tags HTML if tags exist
+        let tagsHtml = '';
+        if (task.tags && task.tags.length > 0) {
+            tagsHtml = `
+                <div class="task-tags">
+                    ${task.tags.map(tag => `<span class="task-tag">${tag}</span>`).join('')}
+                </div>
+            `;
+        }
+        
+        // Build actions HTML if actions exist
+        let actionsHtml = '';
+        if (task.recommended_actions && task.recommended_actions.length > 0) {
+            actionsHtml = `
+                <div class="task-section">
+                    <h5>Recommended Actions:</h5>
+                    <ul class="actions-list">
+                        ${task.recommended_actions.map(action => `<li>${action}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        detailedTask.innerHTML = `
+            <div class="task-header">
+                <div class="task-meta">
+                    <span class="task-badge ${badgeClass}">${task.criticality || 'Medium'}</span>
+                    <span class="task-team">Team: ${task.responsible_team || 'Unassigned'}</span>
+                    <span class="task-status status-${task.status || 'new'}">Status: ${(task.status || 'new').toUpperCase()}</span>
+                </div>
+                ${tagsHtml}
+            </div>
+            
+            ${actionsHtml}
+            
+            <div class="task-section">
+                <h5>Resolution Strategy:</h5>
+                <p>${task.resolution_strategy || 'No resolution strategy specified'}</p>
+            </div>
+            
+            <div class="task-section">
+                <h5>Timeline:</h5>
+                <p>${task.timeline || 'No timeline specified'}</p>
+            </div>
+            
+            ${sourcesHtml}
+        `;
+        
+        // Clear existing issues and add the detailed task
+        modalIssuesList.innerHTML = '';
+        modalIssuesList.appendChild(detailedTask);
+        
+        // Hide loading and show content
+        modalLoading.style.display = 'none';
+        modalContent.style.display = 'block';
+    }
+    
+    // Close the modal
+    function closeModal() {
+        analysisModal.style.display = 'none';
     }
 });

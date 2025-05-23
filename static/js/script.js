@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Socket.IO Event Listeners
     socket.on('connect', () => {
-        addStatusMessage('Connected to server from client', 'system');
+        addStatusMessage('Connected to server', 'system');
     });
     
     socket.on('disconnect', () => {
@@ -84,22 +84,14 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadedFile = null;
         fileLabel.style.display = 'block';
         fileInfo.style.display = 'none';
-        
-        // Only disable analyze button if there are no connected sources
-        if (!window.integrationHandler || !window.integrationHandler.hasConnectedSources()) {
-            analyzeBtn.disabled = true;
-        }
+        analyzeBtn.disabled = true;
     });
     
-    // Form Submission - Combined upload and analyze
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const hasFile = uploadedFile !== null;
-        const hasConnectedSources = window.integrationHandler && window.integrationHandler.hasConnectedSources();
-        
-        if (!hasFile && !hasConnectedSources) {
-            alert('Please select a file or connect a data source');
+        if (!uploadedFile) {
+            alert('Please select a file to analyze');
             return;
         }
         
@@ -128,27 +120,13 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('company_id', companyId);
         formData.append('query', query);
         formData.append('save_analysis', saveAnalysisCheck.checked);
-        
-        // Determine endpoint and prepare data
-        let endpoint = '/api/analyze';
-        
-        if (hasConnectedSources) {
-            // Add connected sources metadata
-            formData.append('has_connected_sources', 'true');
-            formData.append('connected_sources', JSON.stringify(window.integrationHandler.getConnectedSources()));
-            endpoint = '/api/analyze-with-integrations';
-        }
-        
-        // Add file if selected
-        if (hasFile) {
-            formData.append('file', uploadedFile);
-        }
+        formData.append('file', uploadedFile);
         
         // Send to server
         addStatusMessage('Uploading and analyzing data...', 'system');
         analyzeBtn.disabled = true;
         
-        fetch(endpoint, {
+        fetch('/api/analyze', {
             method: 'POST',
             body: formData
         })
@@ -423,11 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
         saveAnalysisCheck.checked = true;
         uploadedFile = null;
         analysisResults = null;
-        
-        // Check if there are connected sources before disabling the analyze button
-        if (!window.integrationHandler || !window.integrationHandler.hasConnectedSources()) {
-            analyzeBtn.disabled = true;
-        }
+        analyzeBtn.disabled = true;
         
         // Hide results and status sections
         resultsSection.style.display = 'none';

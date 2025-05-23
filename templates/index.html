@@ -1,206 +1,161 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kollab</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
-<body>
-    <div class="container">
-        <header class="logo">
-            <h1>Kollab</h1>
-        </header>
+{% extends "base.html" %}
 
-        <main>
-            <section class="upload-section">
-                <h2>Analyze User Feedback</h2>
-                <p>Upload your feedback data to get started</p>
-                
-                <form id="upload-form" enctype="multipart/form-data">
-                    <div class="company-input">
-                        <label for="company-id">Company ID</label>
-                        <input type="text" id="company-id" placeholder="Enter your company ID" required>
-                        <p class="company-help">Used to organize your analyses. If this is your first time, create a unique ID.</p>
-                    </div>
-                    
-                    <div class="query-input">
-                        <label for="query-text">Analysis Query (Optional)</label>
-                        <textarea id="query-text" placeholder="What would you like to learn from this feedback?"></textarea>
-                    </div>
-                    
-                    <!-- New Integration Section -->
-                    <div class="integration-section">
-                        <label>Connect Data Sources</label>
-                        <p class="integration-help">Import data directly from your company tools</p>
-                        
-                        <div class="integration-icons">
-                            <button type="button" class="integration-icon" data-source="gdrive">
-                                <i class="fab fa-google-drive"></i>
-                                <span>Google Drive</span>
-                            </button>
-                            <button type="button" class="integration-icon" data-source="slack">
-                                <i class="fab fa-slack"></i>
-                                <span>Slack</span>
-                            </button>
-                            <button type="button" class="integration-icon" data-source="teams">
-                                <i class="fab fa-microsoft"></i>
-                                <span>Teams</span>
-                            </button>
-                            <button type="button" class="integration-icon" data-source="skype">
-                                <i class="fab fa-skype"></i>
-                                <span>Skype</span>
-                            </button>
-                            <button type="button" class="integration-icon" data-source="jira">
-                                <i class="fab fa-jira"></i>
-                                <span>Jira</span>
-                            </button>
-                            <button type="button" class="integration-icon" data-source="dropbox">
-                                <i class="fab fa-dropbox"></i>
-                                <span>Dropbox</span>
-                            </button>
-                            <button type="button" class="integration-icon" data-source="more">
-                                <i class="fas fa-ellipsis-h"></i>
-                                <span>More</span>
-                            </button>
-                        </div>
-                        
-                        <div id="connected-sources" class="connected-sources">
-                            <!-- Connected sources will appear here -->
-                        </div>
-                    </div>
-                    
-                    <div class="file-upload-section">
-                        <label>Or Upload File Directly</label>
-                        <div class="file-upload">
-                            <label for="file-input">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <span id="file-label">Choose a file or drag it here</span>
-                            </label>
-                            <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.json,.docx,.txt">
-                            <div class="file-info" id="file-info" style="display: none;">
-                                <i class="fas fa-file-alt"></i>
-                                <span id="file-name"></span>
-                                <button type="button" id="remove-file" title="Remove file">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="save-option">
-                        <label>
-                            <input type="checkbox" id="save-analysis" checked>
-                            Save analysis for future reference
-                        </label>
-                    </div>
-                    
-                    <button type="submit" id="analyze-btn" class="primary-button" disabled>
-                        <i class="fas fa-chart-line"></i> Analyze Feedback
-                    </button>
-                </form>
-            </section>
+{% block title %}Kollab - Analyze Feedback{% endblock %}
 
-            <section class="status-section" id="status-section" style="display: none;">
-                <h3>Analysis Progress</h3>
-                <div class="progress-container">
-                    <div class="progress-bar" id="progress-bar">
-                        <div class="progress" id="progress"></div>
-                    </div>
-                </div>
-                <div class="status-messages" id="status-messages">
-                    <div class="message system">Ready to process your feedback</div>
-                </div>
-            </section>
-
-            <section class="results-section" id="results-section" style="display: none;">
-                <h2>Analysis Results</h2>
-                
-                <div class="executive-summary" id="executive-summary">
-                    <h3>Executive Summary</h3>
-                    <p id="summary-content"></p>
-                </div>
-                
-                <div class="issues-container">
-                    <h3>Issues & Actions</h3>
-                    <div class="tabs">
-                        <button class="tab-btn active" data-tab="critical">Critical</button>
-                        <button class="tab-btn" data-tab="high">High</button>
-                        <button class="tab-btn" data-tab="medium">Medium</button>
-                        <button class="tab-btn" data-tab="low">Low</button>
-                        <button class="tab-btn" data-tab="all">All Issues</button>
-                    </div>
-                    
-                    <div id="issues-list" class="issues-list"></div>
-                </div>
-                
-                <div class="implementation-plan">
-                    <h3>Implementation Plan</h3>
-                    <div class="timeline-container" id="timeline-container"></div>
-                </div>
-                
-                <div class="action-buttons">
-                    <div class="saved-notification" id="saved-notification" style="display: none;">
-                        <i class="fas fa-check-circle"></i>
-                        <span id="saved-text">Analysis saved successfully</span>
-                        <a href="#" id="view-dashboard-link" class="dashboard-link">View in Dashboard</a>
-                    </div>
-                    
-                    <button id="download-json" class="secondary-button">
-                        <i class="fas fa-download"></i> Download JSON
-                    </button>
-                    <button id="new-analysis" class="primary-button">
-                        <i class="fas fa-plus"></i> New Analysis
-                    </button>
-                </div>
-            </section>
-        </main>
-
-    </div>
-
-    <!-- Integration Modal -->
-    <div id="integration-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="integration-modal-title">Connect to <span id="source-name">Service</span></h3>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div id="integration-loading" class="modal-loading" style="display: none;">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Connecting to service...</p>
-                </div>
-                
-                <div id="integration-auth-form">
-                    <p class="integration-description">Connect your account to import feedback data directly.</p>
-                    
-                    <button id="oauth-connect-btn" class="primary-button">
-                        <i class="fas fa-key"></i> Connect with OAuth
-                    </button>
-                </div>
-                
-                <!-- Source selection after connection -->
-                <div id="integration-source-select" style="display: none;">
-                    <p>Select data to import:</p>
-                    <div id="source-tree" class="source-tree">
-                        <!-- Source tree will be populated dynamically -->
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="integration-cancel-btn" class="secondary-button">
-                    <i class="fas fa-times"></i> Cancel
+{% block content %}
+<section class="upload-section">
+    <h2>Analyze User Feedback</h2>
+    <p>Upload your feedback data to get started</p>
+    
+    <form id="upload-form" enctype="multipart/form-data">
+        <div class="company-input">
+            <label for="company-id">Company ID</label>
+            <input type="text" id="company-id" placeholder="Enter your company ID" required>
+            <p class="company-help">Used to organize your analyses. If this is your first time, create a unique ID.</p>
+        </div>
+        
+        <div class="query-input">
+            <label for="query-text">Analysis Query (Optional)</label>
+            <textarea id="query-text" placeholder="What would you like to learn from this feedback?"></textarea>
+        </div>
+        
+        <!-- Integration Section -->
+        <div class="integration-section">
+            <label>Connect Data Sources</label>
+            <p class="integration-help">Import data directly from your company tools</p>
+            
+            <div class="integration-icons">
+                <button type="button" class="integration-icon" data-source="gdrive">
+                    <i class="fab fa-google-drive"></i>
+                    <span>Google Drive</span>
                 </button>
-                <button id="integration-connect-btn" class="primary-button">
-                    <i class="fas fa-plug"></i> Connect
+                <button type="button" class="integration-icon" data-source="slack">
+                    <i class="fab fa-slack"></i>
+                    <span>Slack</span>
                 </button>
+                <button type="button" class="integration-icon" data-source="teams">
+                    <i class="fab fa-microsoft"></i>
+                    <span>Teams</span>
+                </button>
+                <button type="button" class="integration-icon" data-source="skype">
+                    <i class="fab fa-skype"></i>
+                    <span>Skype</span>
+                </button>
+                <button type="button" class="integration-icon" data-source="jira">
+                    <i class="fab fa-jira"></i>
+                    <span>Jira</span>
+                </button>
+                <button type="button" class="integration-icon" data-source="dropbox">
+                    <i class="fab fa-dropbox"></i>
+                    <span>Dropbox</span>
+                </button>
+                <button type="button" class="integration-icon" data-source="more">
+                    <i class="fas fa-ellipsis-h"></i>
+                    <span>More</span>
+                </button>
+            </div>
+            
+            <p class="integration-coming-soon">Integrations coming soon!</p>
+        </div>
+        
+        <div class="file-upload-section">
+            <label>Upload File</label>
+            <div class="file-upload">
+                <label for="file-input">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span id="file-label">Choose a file or drag it here</span>
+                </label>
+                <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.json,.docx,.txt">
+                <div class="file-info" id="file-info" style="display: none;">
+                    <i class="fas fa-file-alt"></i>
+                    <span id="file-name"></span>
+                    <button type="button" id="remove-file" title="Remove file">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
+        
+        <div class="save-option">
+            <label>
+                <input type="checkbox" id="save-analysis" checked>
+                Save analysis for future reference
+            </label>
+        </div>
+        
+        <button type="submit" id="analyze-btn" class="primary-button" disabled>
+            <i class="fas fa-chart-line"></i> Analyze Feedback
+        </button>
+    </form>
+</section>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/integrations.js') }}"></script>
-</body>
-</html>
+<section class="status-section" id="status-section" style="display: none;">
+    <h3>Analysis Progress</h3>
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+    </div>
+    <div class="status-messages" id="status-messages">
+        <div class="message system">Ready to process your feedback</div>
+    </div>
+</section>
+
+<section class="results-section" id="results-section" style="display: none;">
+    <h2>Analysis Results</h2>
+    
+    <div class="executive-summary" id="executive-summary">
+        <h3>Executive Summary</h3>
+        <p id="summary-content"></p>
+    </div>
+    
+    <div class="issues-container">
+        <h3>Issues & Actions</h3>
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="critical">Critical</button>
+            <button class="tab-btn" data-tab="high">High</button>
+            <button class="tab-btn" data-tab="medium">Medium</button>
+            <button class="tab-btn" data-tab="low">Low</button>
+            <button class="tab-btn" data-tab="all">All Issues</button>
+        </div>
+        
+        <div id="issues-list" class="issues-list"></div>
+    </div>
+    
+    <div class="implementation-plan">
+        <h3>Implementation Plan</h3>
+        <div class="timeline-container" id="timeline-container"></div>
+    </div>
+    
+    <div class="action-buttons">
+        <div class="saved-notification" id="saved-notification" style="display: none;">
+            <i class="fas fa-check-circle"></i>
+            <span id="saved-text">Analysis saved successfully</span>
+            <a href="#" id="view-dashboard-link" class="dashboard-link">View in Dashboard</a>
+        </div>
+        
+        <button id="download-json" class="secondary-button">
+            <i class="fas fa-download"></i> Download JSON
+        </button>
+        <button id="new-analysis" class="primary-button">
+            <i class="fas fa-plus"></i> New Analysis
+        </button>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .integration-coming-soon {
+        text-align: center;
+        color: var(--text-light);
+        font-style: italic;
+        margin-top: 0.5rem;
+    }
+    
+    .integration-icon {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
