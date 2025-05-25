@@ -165,5 +165,5 @@ def page_not_found(error):
 # Main Entry Point
 # =============================
 if __name__ == '__main__':
-    logger.info("Starting Kollab server...")
+    logger.info("Starting Kollab server with advanced text processing and MongoDB storage...")
     socketio.run(app, debug=True, host='0.0.0.0', allow_unsafe_werkzeug=True)

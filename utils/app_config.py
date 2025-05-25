@@ -7,11 +7,16 @@ from flask_socketio import SocketIO
 import logging
 import tempfile
 import os
+from dotenv import load_dotenv
 
 # Import the agent classes - circular import is avoided by importing inside the functions that use them
 from agents.scout_agent import ScoutAgent
 from agents.analyst_agent import AnalystAgent
-from utils.storage import StorageManager
+from utils.mongodb_storage import MongoDBStorage
+from utils.text_processor import TextPreprocessor
+
+# Load environment variables from .env file
+load_dotenv()
 
 # =============================
 # App Initialization
@@ -23,14 +28,38 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # =============================
+# Configuration Settings
+# =============================
+MONGODB_URI = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/')
+MONGODB_DB = os.environ.get('MONGODB_DB', 'KollabAgentic')
+
+# =============================
 # Logging Configuration
 # =============================
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # =============================
-# Agent & Storage Initialization
+# Text Preprocessor Initialization
 # =============================
-storage = StorageManager()
-scout = ScoutAgent(socket_instance=socketio)
+text_processor = TextPreprocessor()
+
+# =============================
+# Storage Initialization
+# =============================
+try:
+    storage = MongoDBStorage(
+        connection_string=MONGODB_URI,
+        database_name=MONGODB_DB
+    )
+    logger.info(f"Connected to MongoDB at {MONGODB_URI}")
+except Exception as e:
+    logger.error(f"Failed to connect to MongoDB: {str(e)}")
+
+# =============================
+# Agent Initialization
+# =============================
+scout = ScoutAgent(
+    socket_instance=socketio,
+)
 analyst = AnalystAgent(socket_instance=socketio)

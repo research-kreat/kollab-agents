@@ -1,7 +1,7 @@
 from flask import jsonify
 
 # Import the centralized app configuration
-from utils.app_config import socketio, logger, storage, scout, analyst
+from utils.app_config import socketio, logger, storage, scout, analyst, text_processor
 
 def process_with_agents(content, query, process_id, company_id, save_analysis):
     """
@@ -18,10 +18,23 @@ def process_with_agents(content, query, process_id, company_id, save_analysis):
         JSON response with analysis results
     """
     try:
-        # Step 2: Scout agent processing
-        socketio.emit('status', {'message': 'Scout agent processing data...'})
+        # Apply text preprocessing to all records
+        socketio.emit('status', {'message': 'Preprocessing data...'})
+        processed_records = []
+        
+        # Process in batches for memory efficiency
+        total_records = len(content)
+        for i, batch in enumerate(text_processor.batch_records(content)):
+            socketio.emit('status', {'message': f'Preprocessing batch {i+1} of {(total_records+text_processor.batch_size-1)//text_processor.batch_size}...'})
+            processed_batch = text_processor.preprocess_batch(batch)
+            processed_records.extend(processed_batch)
+            
+        socketio.emit('status', {'message': f'Preprocessing complete. Processed {len(processed_records)} records.'})
+        
+        # Step 2: Scout agent processing with batching
+        socketio.emit('status', {'message': 'Scout agent processing data in batches...'})
         scout_results = scout.process_scout_query({
-            'content': content,
+            'content': processed_records,
             'query': query,
             'process_id': process_id,
             'company_id': company_id
@@ -46,8 +59,10 @@ def process_with_agents(content, query, process_id, company_id, save_analysis):
             final_results['saved'] = save_result['success']
             if save_result['success']:
                 final_results['ticket_id'] = save_result['ticket_id']
+                socketio.emit('status', {'message': f'Analysis saved successfully with ticket ID: {save_result["ticket_id"]}'})
             else:
-                logger.error(f"Failed to save analysis: {save_result['error']}")
+                logger.error(f"Failed to save analysis: {save_result.get('error', 'Unknown error')}")
+                socketio.emit('status', {'message': f'Failed to save analysis: {save_result.get("error", "Unknown error")}'})
         
         socketio.emit('status', {'message': 'Analysis complete'})
         return jsonify(final_results)
