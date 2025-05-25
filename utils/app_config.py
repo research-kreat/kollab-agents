@@ -12,8 +12,8 @@ from dotenv import load_dotenv
 # Import the agent classes - circular import is avoided by importing inside the functions that use them
 from agents.scout_agent import ScoutAgent
 from agents.analyst_agent import AnalystAgent
-from utils.mongodb_storage import MongoDBStorage
 from utils.text_processor import TextPreprocessor
+from utils.mongodb_storage import MongoDBStorage
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,7 +21,10 @@ load_dotenv()
 # =============================
 # App Initialization
 # =============================
-app = Flask(__name__)
+app = Flask(__name__, 
+            template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'),
+            static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static'))
+            
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'kollab_secret_key')
 app.config['UPLOAD_FOLDER'] = tempfile.mkdtemp()
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
@@ -54,12 +57,14 @@ try:
     )
     logger.info(f"Connected to MongoDB at {MONGODB_URI}")
 except Exception as e:
-    logger.error(f"Failed to connect to MongoDB: {str(e)}")
+    logger.warning(f"MongoDB connection failed: {str(e)}.")
 
 # =============================
 # Agent Initialization
 # =============================
-scout = ScoutAgent(
-    socket_instance=socketio,
-)
+scout = ScoutAgent(socket_instance=socketio)
 analyst = AnalystAgent(socket_instance=socketio)
+
+# Print debug info about template and static paths
+logger.info(f"Template directory: {app.template_folder}")
+logger.info(f"Static directory: {app.static_folder}")
