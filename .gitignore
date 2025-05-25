@@ -1,5 +1,5 @@
 .env
-/process_data
+/test_datasets
 __pycache__
 data/companies 
 .vscode

@@ -71,19 +71,23 @@ class MongoDBStorage:
                     if 'status' not in issue:
                         issue['status'] = 'new'
             
+            # Create a clean copy without any ObjectId that might be present
+            # This ensures we don't have serialization issues later
+            analysis_data_clean = self._ensure_serializable(analysis_data)
+            
             # Check if a document for this ticket_id already exists
-            existing_doc = self.db.companies.find_one({"ticket_id": ticket_id})
+            existing_doc = self.db.companies_tickets.find_one({"ticket_id": ticket_id})
             
             if existing_doc:
                 # Update existing document
-                result = self.db.companies.update_one(
+                result = self.db.companies_tickets.update_one(
                     {"ticket_id": ticket_id},
-                    {"$set": analysis_data}
+                    {"$set": analysis_data_clean}
                 )
                 logger.info(f"Updated existing analysis in MongoDB, ticket_id: {ticket_id}")
             else:
                 # Insert new document
-                result = self.db.companies.insert_one(analysis_data)
+                result = self.db.companies_tickets.insert_one(analysis_data_clean)
                 logger.info(f"Saved new analysis to MongoDB, ticket_id: {ticket_id}")
             
             return {
@@ -97,7 +101,26 @@ class MongoDBStorage:
                 'success': False,
                 'error': str(e)
             }
-    
+
+    def _ensure_serializable(self, data):
+        """
+        Recursively process a dictionary to ensure all values are JSON serializable
+        
+        Args:
+            data: Dict or list to process
+            
+        Returns:
+            Dict or list with all values being JSON serializable
+        """
+        if isinstance(data, dict):
+            return {k: self._ensure_serializable(v) for k, v in data.items() if k != '_id'}
+        elif isinstance(data, list):
+            return [self._ensure_serializable(item) for item in data]
+        elif isinstance(data, ObjectId):
+            return str(data)  # Convert ObjectId to string
+        else:
+            return data
+
     def get_analysis(self, company_id, ticket_id):
         """
         Retrieve a specific analysis by ticket ID
@@ -111,7 +134,7 @@ class MongoDBStorage:
         """
         try:
             # Find document by ticket_id
-            analysis_data = self.db.companies.find_one(
+            analysis_data = self.db.companies_tickets.find_one(
                 {"ticket_id": ticket_id, "company_id": company_id},
                 {"_id": 0}  # Exclude MongoDB _id from results
             )
@@ -143,7 +166,7 @@ class MongoDBStorage:
         """
         try:
             # Find all documents for this company_id
-            cursor = self.db.companies.find(
+            cursor = self.db.companies_tickets.find(
                 {"company_id": company_id},
                 {"_id": 0}  # Exclude MongoDB _id from results
             )
@@ -211,7 +234,7 @@ class MongoDBStorage:
         """
         try:
             # Update the document status
-            result = self.db.companies.update_one(
+            result = self.db.companies_tickets.update_one(
                 {"ticket_id": ticket_id, "company_id": company_id},
                 {
                     "$set": {
@@ -293,7 +316,7 @@ class MongoDBStorage:
                 update_op["$set"]["status"] = overall_status
                 
                 # Execute update in MongoDB
-                update_result = self.db.companies.update_one(
+                update_result = self.db.companies_tickets.update_one(
                     {"ticket_id": ticket_id, "company_id": company_id},
                     update_op
                 )
