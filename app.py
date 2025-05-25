@@ -68,7 +68,7 @@ def dashboard(company_id):
     )
 
 # =============================
-# API Endpoints
+# AI API Endpoints
 # =============================
 @app.route('/api/analyze', methods=['POST'])
 def analyze_feedback():
@@ -117,8 +117,11 @@ def analyze_feedback():
         if 'file_path' in locals() and os.path.exists(file_path):
             os.remove(file_path)
         return jsonify({'error': str(e)}), 500
-
-@app.route('/api/analysis/<company_id>/<ticket_id>')
+    
+# =============================
+# DB Endpoints
+# =============================
+@app.route('/db/analysis/<company_id>/<ticket_id>')
 def get_analysis(company_id, ticket_id):
     """Fetch specific analysis record"""
     result = storage.get_analysis(company_id, ticket_id)
@@ -126,7 +129,7 @@ def get_analysis(company_id, ticket_id):
         return jsonify(result)
     return jsonify({'success': False, 'error': result['error']}), 404
 
-@app.route('/api/task/status', methods=['POST'])
+@app.route('/db/task/status', methods=['POST'])
 def update_task_status():
     """Update status of a specific task"""
     data = request.json

@@ -1,5 +1,6 @@
 .env
-/test_datasets
+/test_datasets/*
+!/test_datasets/ANALYZE_OUTPUT_FORMAT.json
 __pycache__
 data/companies 
 .vscode

@@ -1,0 +1,386 @@
+{
+  "_id": {
+    "$oid": "6832ccb1542c3ef6e855367e"
+  },
+  "process_id": "4fc96329-9b76-4437-85e6-a5d0d7d97023",
+  "company_id": "mahindra",
+  "timestamp": 1748159665,
+  "query": "What are the key issues and actionable insights from this feedback?",
+  "scout_analysis": {
+    "issue_types": [
+      {
+        "type": "App Freezing During File Upload",
+        "examples": [
+          "User Samantha K reported app keeps freezing trying to upload files, especially larger ones."
+        ],
+        "priority": "High",
+        "key_details": "Happens during an update. Needs urgent attention to improve stability during file uploads.",
+        "sources": [
+          "User Samantha K"
+        ],
+        "tags": [
+          "bug",
+          "update"
+        ]
+      },
+      {
+        "type": "Feature Request for Dark Mode",
+        "examples": [
+          "User Devon23 requested to add dark mode to the dashboard."
+        ],
+        "priority": "Medium",
+        "key_details": "Enhancing user experience for night-time usage could attract more users.",
+        "sources": [
+          "User Devon23"
+        ],
+        "tags": [
+          "feature"
+        ]
+      },
+      {
+        "type": "Login Issues with Password Reset",
+        "examples": [
+          "User Arjun is unable to login; the system indicates 'something went wrong' during password reset attempts."
+        ],
+        "priority": "Critical",
+        "key_details": "User tried multiple browsers without success, indicating a potential widespread issue.",
+        "sources": [
+          "User Arjun"
+        ],
+        "tags": [
+          "bug"
+        ]
+      },
+      {
+        "type": "API Documentation Access Issues",
+        "examples": [
+          "User Julie P stated that clients are facing 404 redirects when trying to access API docs."
+        ],
+        "priority": "High",
+        "key_details": "This affects user ability to use the product effectively and needs immediate resolution.",
+        "sources": [
+          "User Julie P"
+        ],
+        "tags": [
+          "bug"
+        ]
+      },
+      {
+        "type": "Deployment Errors with New Build",
+        "examples": [
+          "User TechGuy87 reported the deployment is stuck at 90% during build version 2.8.1."
+        ],
+        "priority": "Critical",
+        "key_details": "Requires urgent fix as it halts deployment processes.",
+        "sources": [
+          "User TechGuy87"
+        ],
+        "tags": [
+          "bug"
+        ]
+      },
+      {
+        "type": "Broken Excel Export Feature",
+        "examples": [
+          "User Priya S noted that the report export to Excel is broken, generating empty sheets."
+        ],
+        "priority": "High",
+        "key_details": "This feature was functioning last week, indicating a recent regression in functionality.",
+        "sources": [
+          "User Priya S"
+        ],
+        "tags": [
+          "bug"
+        ]
+      }
+    ],
+    "common_themes": [
+      "Stability issues",
+      "Feature enhancement requests",
+      "Access and functionality problems"
+    ],
+    "overall_sentiment": "Negative",
+    "summary": "The feedback highlights significant critical and high-priority issues mostly related to application stability, access problems, and functionality breakdowns. There’s a strong desire for feature enhancements like dark mode."
+  },
+  "metadata": {
+    "avg_feedback_length": 655,
+    "common_fields": [
+      "text"
+    ],
+    "has_structured_data": false,
+    "suggested_tags": [
+      "update",
+      "bug",
+      "feature"
+    ],
+    "top_locations": [],
+    "saved_at": 1748159665,
+    "updated_at": 1748159757
+  },
+  "analyst_insights": {
+    "team_assignments": [
+      {
+        "issue_type": "Login Issues with Password Reset",
+        "responsible_team": "Technical Support",
+        "supporting_teams": [
+          "Product Development"
+        ],
+        "criticality": "Critical",
+        "recommended_actions": [
+          "Investigate and resolve the password reset flow for multiple browsers",
+          "Implement detailed error logging for failed login attempts"
+        ],
+        "resolution_strategy": "Conduct a thorough review of the password reset process and improve error messaging. Implement fixes immediately to ensure that users can regain access without issues.",
+        "sources": [
+          "User Arjun"
+        ]
+      },
+      {
+        "issue_type": "Deployment Errors with New Build",
+        "responsible_team": "Product Development",
+        "supporting_teams": [
+          "Technical Support"
+        ],
+        "criticality": "Critical",
+        "recommended_actions": [
+          "Fix the deployment issue preventing completion of build version 2.8.1",
+          "Implement additional testing before deployments to catch similar issues"
+        ],
+        "resolution_strategy": "Immediately roll back the problematic build and work on a fix. Ensure rigorous testing is done on the next build before deployment goes live.",
+        "sources": [
+          "User TechGuy87"
+        ]
+      },
+      {
+        "issue_type": "App Freezing During File Upload",
+        "responsible_team": "Technical Development",
+        "supporting_teams": [
+          "Quality Assurance"
+        ],
+        "criticality": "High",
+        "recommended_actions": [
+          "Identify the root cause of freezes during file uploads, especially for larger files",
+          "Test and deploy a fix for the upload process"
+        ],
+        "resolution_strategy": "Conduct a detailed analysis of the upload functionality and deploy fixes. User testing should be employed to verify stability before confirming a successful resolution.",
+        "sources": [
+          "User Samantha K"
+        ]
+      },
+      {
+        "issue_type": "API Documentation Access Issues",
+        "responsible_team": "Technical Development",
+        "supporting_teams": [
+          "Product Management"
+        ],
+        "criticality": "High",
+        "recommended_actions": [
+          "Resolve 404 error issues related to API documentation",
+          "Ensure paths to documentation are correctly configured and accessible"
+        ],
+        "resolution_strategy": "Review and correct server configurations that are causing access problems, and verify that all links function correctly.",
+        "sources": [
+          "User Julie P"
+        ]
+      },
+      {
+        "issue_type": "Broken Excel Export Feature",
+        "responsible_team": "Technical Development",
+        "supporting_teams": [
+          "Quality Assurance"
+        ],
+        "criticality": "High",
+        "recommended_actions": [
+          "Investigate the recent regression in Excel export functionality",
+          "Repair and test Excel export to ensure proper generation of files"
+        ],
+        "resolution_strategy": "Analyze changes made prior to the issue appearing, fix any bugs discovered, and test thoroughly before reopening the feature to users.",
+        "sources": [
+          "User Priya S"
+        ]
+      },
+      {
+        "issue_type": "Feature Request for Dark Mode",
+        "responsible_team": "Product Development",
+        "supporting_teams": [
+          "User Experience"
+        ],
+        "criticality": "Medium",
+        "recommended_actions": [
+          "Work on the design and implementation of dark mode for the application",
+          "Conduct user testing and feedback sessions to refine the feature"
+        ],
+        "resolution_strategy": "Create a project plan outlining design, development, and testing phases for the dark mode feature, ensuring that user feedback is incorporated throughout the process.",
+        "sources": [
+          "User Devon23"
+        ]
+      }
+    ],
+    "cross_team_recommendations": [
+      "Establish a task force that includes members from Technical Development, Product Management, and Quality Assurance to monitor and improve app stability before releases.",
+      "Host regular inter-team meetings to prioritize and track progress on critical issues raised in user feedback."
+    ],
+    "prioritization": [
+      {
+        "issue_type": "Login Issues with Password Reset",
+        "reason": "This issue affects users' ability to access the application, making it the highest priority for immediate resolution."
+      },
+      {
+        "issue_type": "Deployment Errors with New Build",
+        "reason": "The inability to deploy updates halts progress on all features and improvements."
+      }
+    ]
+  },
+  "final_report": {
+    "executive_summary": "The feedback highlights significant critical and high-priority issues mostly related to application stability, access problems, and functionality breakdowns. There’s a strong desire for feature enhancements like dark mode.",
+    "issues": [
+      {
+        "issue_type": "Login Issues with Password Reset",
+        "description": "Conduct a thorough review of the password reset process and improve error messaging. Implement fixes immediately to ensure that users can regain access without issues.",
+        "responsible_team": "Technical Support",
+        "criticality": "Critical",
+        "recommended_actions": [
+          "Investigate and resolve the password reset flow for multiple browsers",
+          "Implement detailed error logging for failed login attempts"
+        ],
+        "resolution_strategy": "Conduct a thorough review of the password reset process and improve error messaging. Implement fixes immediately to ensure that users can regain access without issues.",
+        "sources": [
+          "User Arjun"
+        ],
+        "tags": [
+          "bug"
+        ],
+        "timeline": "immediate",
+        "status": "new"
+      },
+      {
+        "issue_type": "Deployment Errors with New Build",
+        "description": "Immediately roll back the problematic build and work on a fix. Ensure rigorous testing is done on the next build before deployment goes live.",
+        "responsible_team": "Product Development",
+        "criticality": "Critical",
+        "recommended_actions": [
+          "Fix the deployment issue preventing completion of build version 2.8.1",
+          "Implement additional testing before deployments to catch similar issues"
+        ],
+        "resolution_strategy": "Immediately roll back the problematic build and work on a fix. Ensure rigorous testing is done on the next build before deployment goes live.",
+        "sources": [
+          "User TechGuy87"
+        ],
+        "tags": [
+          "bug"
+        ],
+        "timeline": "immediate",
+        "status": "new"
+      },
+      {
+        "issue_type": "App Freezing During File Upload",
+        "description": "Conduct a detailed analysis of the upload functionality and deploy fixes. User testing should be employed to verify stability before confirming a successful resolution.",
+        "responsible_team": "Technical Development",
+        "criticality": "High",
+        "recommended_actions": [
+          "Identify the root cause of freezes during file uploads, especially for larger files",
+          "Test and deploy a fix for the upload process"
+        ],
+        "resolution_strategy": "Conduct a detailed analysis of the upload functionality and deploy fixes. User testing should be employed to verify stability before confirming a successful resolution.",
+        "sources": [
+          "User Samantha K"
+        ],
+        "tags": [
+          "bug",
+          "update"
+        ],
+        "timeline": "immediate",
+        "status": "new"
+      },
+      {
+        "issue_type": "API Documentation Access Issues",
+        "description": "Review and correct server configurations that are causing access problems, and verify that all links function correctly.",
+        "responsible_team": "Technical Development",
+        "criticality": "High",
+        "recommended_actions": [
+          "Resolve 404 error issues related to API documentation",
+          "Ensure paths to documentation are correctly configured and accessible"
+        ],
+        "resolution_strategy": "Review and correct server configurations that are causing access problems, and verify that all links function correctly.",
+        "sources": [
+          "User Julie P"
+        ],
+        "tags": [
+          "bug"
+        ],
+        "timeline": "immediate",
+        "status": "new"
+      },
+      {
+        "issue_type": "Broken Excel Export Feature",
+        "description": "Analyze changes made prior to the issue appearing, fix any bugs discovered, and test thoroughly before reopening the feature to users.",
+        "responsible_team": "Technical Development",
+        "criticality": "High",
+        "recommended_actions": [
+          "Investigate the recent regression in Excel export functionality",
+          "Repair and test Excel export to ensure proper generation of files"
+        ],
+        "resolution_strategy": "Analyze changes made prior to the issue appearing, fix any bugs discovered, and test thoroughly before reopening the feature to users.",
+        "sources": [
+          "User Priya S"
+        ],
+        "tags": [
+          "bug"
+        ],
+        "timeline": "immediate",
+        "status": "new"
+      },
+      {
+        "issue_type": "Feature Request for Dark Mode",
+        "description": "Create a project plan outlining design, development, and testing phases for the dark mode feature, ensuring that user feedback is incorporated throughout the process.",
+        "responsible_team": "Product Development",
+        "criticality": "Medium",
+        "recommended_actions": [
+          "Work on the design and implementation of dark mode for the application",
+          "Conduct user testing and feedback sessions to refine the feature"
+        ],
+        "resolution_strategy": "Create a project plan outlining design, development, and testing phases for the dark mode feature, ensuring that user feedback is incorporated throughout the process.",
+        "sources": [
+          "User Devon23"
+        ],
+        "tags": [
+          "feature"
+        ],
+        "timeline": "short-term",
+        "status": "new"
+      }
+    ],
+    "cross_team_initiatives": [
+      {
+        "name": "Initiative 1",
+        "description": "Establish a task force that includes members from Technical Development, Product Management, and Quality Assurance to monitor and improve app stability before releases.",
+        "teams_involved": [
+          "Product"
+        ]
+      },
+      {
+        "name": "Initiative 2",
+        "description": "Host regular inter-team meetings to prioritize and track progress on critical issues raised in user feedback.",
+        "teams_involved": [
+          "Product",
+          "Engineering"
+        ]
+      }
+    ],
+    "implementation_plan": {
+      "immediate_actions": [
+        "Login Issues with Password Reset - Investigate and resolve the password reset flow for multiple browsers",
+        "Deployment Errors with New Build - Fix the deployment issue preventing completion of build version 2.8.1",
+        "App Freezing During File Upload - Identify the root cause of freezes during file uploads, especially for larger files",
+        "API Documentation Access Issues - Resolve 404 error issues related to API documentation",
+        "Broken Excel Export Feature - Investigate the recent regression in Excel export functionality"
+      ],
+      "short_term_actions": [
+        "Feature Request for Dark Mode - Work on the design and implementation of dark mode for the application"
+      ],
+      "long_term_actions": []
+    }
+  },
+  "status": "new",
+  "ticket_id": "mahindra_1748159665"
+}

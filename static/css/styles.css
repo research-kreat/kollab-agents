@@ -14,6 +14,12 @@
     --border-color: #e5e7eb;
     --border-radius: 8px;
     --transition: all 0.3s ease;
+    --card-color: white;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --medium-color: #d97706;
+    --high-color: #ea580c; 
+    --low-color: #059669;
 }
 
 * {
@@ -635,26 +641,6 @@ textarea {
     100% { transform: rotate(360deg); }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .container {
-        padding: 1rem;
-    }
-    
-    .issues-list {
-        grid-template-columns: 1fr;
-    }
-    
-    .action-buttons {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .saved-notification {
-        margin-bottom: 1rem;
-    }
-}
-
 /* Integration Section Styles */
 .integration-section {
     margin-bottom: 1.5rem;
@@ -689,6 +675,8 @@ textarea {
     padding: 8px;
     cursor: pointer;
     transition: var(--transition);
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .integration-icon:hover {
@@ -731,127 +719,86 @@ textarea {
     text-align: center;
 }
 
-.connected-sources {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 1rem;
-}
-
-.connected-source {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    background-color: var(--primary-color-light);
-    border-radius: 20px;
-    color: var(--primary-color);
-    font-size: 0.9rem;
-}
-
-.connected-source i {
-    margin-right: 0.5rem;
-}
-
-.connected-source .remove-source {
-    margin-left: 0.5rem;
-    cursor: pointer;
+.integration-coming-soon {
+    text-align: center;
     color: var(--text-light);
-}
-
-.connected-source .remove-source:hover {
-    color: var(--primary-color);
-}
-
-/* Modal Styles for Integration */
-#integration-modal .modal-content {
-    max-width: 500px;
-}
-
-.integration-description {
-    margin-bottom: 1.5rem;
-    color: var(--text-medium);
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.form-group input[type="text"],
-.form-group input[type="password"] {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    font-size: 1rem;
-}
-
-#oauth-connect-btn {
-    width: 100%;
-}
-
-/* Source Selection Tree */
-.source-tree {
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-    margin-top: 1rem;
-}
-
-.tree-item {
-    margin-bottom: 0.5rem;
-}
-
-.tree-folder {
-    cursor: pointer;
-    user-select: none;
-}
-
-.tree-folder:before {
-    content: '▶';
-    display: inline-block;
-    margin-right: 5px;
-    transition: transform 0.2s;
-    font-size: 0.8rem;
-}
-
-.tree-folder.open:before {
-    transform: rotate(90deg);
-}
-
-.tree-folder-content {
-    display: none;
-    padding-left: 1.5rem;
+    font-style: italic;
     margin-top: 0.5rem;
-}
-
-.tree-folder.open .tree-folder-content {
-    display: block;
-}
-
-.tree-file {
-    display: flex;
-    align-items: center;
-    padding: 0.3rem 0;
-}
-
-.tree-file input[type="checkbox"] {
-    margin-right: 0.5rem;
 }
 
 .file-upload-section {
     margin-bottom: 1.5rem;
 }
 
-/* Responsiveness */
+/* Dashboard main layout */
+.dashboard-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Error page styles */
+.error-container {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.error-icon {
+    font-size: 5rem;
+    color: var(--critical-color);
+    margin-bottom: 1.5rem;
+}
+
+.error-title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.error-message {
+    font-size: 1.2rem;
+    color: var(--text-light);
+    margin-bottom: 2rem;
+}
+
+.home-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.home-link:hover {
+    background-color: #3a5bd4;
+    text-decoration: none;
+}
+
+.home-link i {
+    margin-right: 0.5rem;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .issues-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .saved-notification {
+        margin-bottom: 1rem;
+    }
+    
     .integration-icons {
         justify-content: center;
     }
@@ -860,4 +807,49 @@ textarea {
         width: 70px;
         height: 70px;
     }
+}
+
+/* No results placeholder */
+.no-results {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    width: 100%;
+}
+
+.no-results i {
+    font-size: 3rem;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+.no-results p {
+    color: var(--text-light);
+    margin-bottom: 1rem;
+}
+
+/* Loading indicator */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: var(--text-medium);
+}
+
+.loading i {
+    margin-right: 0.5rem;
+    animation: spin 1s linear infinite;
+}
+
+/* Error message */
+.error-message {
+    padding: 1rem;
+    background-color: #fee2e2;
+    border-left: 3px solid var(--critical-color);
+    color: #b91c1c;
+    border-radius: var(--border-radius);
 }

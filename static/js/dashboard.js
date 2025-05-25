@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
         taskCountResolved.textContent = '0';
         
         // Fetch analysis data
-        fetch(`/api/analysis/${currentCompanyId}/${ticketId}`)
+        fetch(`/db/analysis/${currentCompanyId}/${ticketId}`)
             .then(response => response.json())
             .then(data => {
                 if (!data.success || !data.data) {
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update task status via API
     function updateTaskStatus(ticketId, taskIndex, newStatus) {
         // Send status update request
-        fetch('/api/task/status', {
+        fetch('/db/task/status', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
