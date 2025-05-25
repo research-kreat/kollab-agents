@@ -21,9 +21,12 @@ load_dotenv()
 # =============================
 # App Initialization
 # =============================
+# Get the project root directory (going up one level from utils)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 app = Flask(__name__, 
-            template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'),
-            static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static'))
+            template_folder=os.path.join(project_root, 'templates'),
+            static_folder=os.path.join(project_root, 'static'))
             
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'kollab_secret_key')
 app.config['UPLOAD_FOLDER'] = tempfile.mkdtemp()
@@ -33,7 +36,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # =============================
 # Configuration Settings
 # =============================
-MONGODB_URI = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/')
+MONGODB_URI = os.environ.get('MONGODB_URI')
 MONGODB_DB = os.environ.get('MONGODB_DB', 'KollabAgentic')
 
 # =============================
@@ -55,7 +58,7 @@ try:
         connection_string=MONGODB_URI,
         database_name=MONGODB_DB
     )
-    logger.info(f"Connected to MongoDB at {MONGODB_URI}")
+    logger.info(f"Connected to MongoDB")
 except Exception as e:
     logger.warning(f"MongoDB connection failed: {str(e)}.")
 
